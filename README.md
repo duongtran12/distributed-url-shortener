@@ -30,6 +30,7 @@ Phase 1 foundation is in progress. The current setup contains the Spring Boot ap
 4. Export the matching application variables, then run the application:
 
    ```powershell
+   $env:SPRING_PROFILES_ACTIVE = 'dev'
    $env:SPRING_DATASOURCE_PASSWORD = '<the password from .env>'
    .\mvnw.cmd spring-boot:run
    ```
@@ -41,3 +42,11 @@ Phase 1 foundation is in progress. The current setup contains the Spring Boot ap
    ```
 
 Stop local infrastructure with `docker compose down`. Add `--volumes` only when you intentionally want to delete local database data.
+
+## Tests
+
+The application context test uses Testcontainers to start an isolated PostgreSQL instance. Docker Desktop must be running, but the Compose database does not need to be started.
+
+```powershell
+.\mvnw.cmd clean verify
+```

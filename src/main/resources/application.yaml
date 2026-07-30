@@ -3,9 +3,9 @@ spring:
     name: url-shortener
 
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/url_shortener}
-    username: ${SPRING_DATASOURCE_USERNAME:url_shortener}
-    password: ${SPRING_DATASOURCE_PASSWORD:url_shortener}
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
 
   jpa:
     hibernate:
@@ -21,6 +21,10 @@ spring:
 
 server:
   port: ${SERVER_PORT:8080}
+
+logging:
+  level:
+    root: INFO
 
 management:
   endpoints:
