@@ -1,7 +1,6 @@
 package com.duong.url_shortener.user;
 
 import java.time.Instant;
-import java.util.Locale;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -63,7 +62,7 @@ public class User {
 	}
 
 	private User(String email, String passwordHash, String displayName, Role role) {
-		this.email = normalizeEmail(email);
+		this.email = EmailNormalizer.normalize(email);
 		this.passwordHash = passwordHash;
 		this.displayName = displayName.strip();
 		this.role = role;
@@ -96,10 +95,6 @@ public class User {
 	@PreUpdate
 	void onUpdate() {
 		this.updatedAt = Instant.now();
-	}
-
-	private static String normalizeEmail(String email) {
-		return email.strip().toLowerCase(Locale.ROOT);
 	}
 
 	public Long getId() {
