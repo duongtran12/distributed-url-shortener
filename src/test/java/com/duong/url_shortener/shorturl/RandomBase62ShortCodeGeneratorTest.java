@@ -17,7 +17,7 @@ class RandomBase62ShortCodeGeneratorTest {
 				.thenReturn(0, 9, 10, 35, 36, 61, 1);
 		ShortCodeGenerator generator = new RandomBase62ShortCodeGenerator(
 				random,
-				new ShortUrlProperties(7));
+				new ShortUrlProperties(7, 5, "http://localhost:8080"));
 
 		String code = generator.generate();
 
@@ -32,7 +32,7 @@ class RandomBase62ShortCodeGeneratorTest {
 				.thenReturn(0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1);
 		ShortCodeGenerator generator = new RandomBase62ShortCodeGenerator(
 				random,
-				new ShortUrlProperties(7));
+				new ShortUrlProperties(7, 5, "http://localhost:8080"));
 
 		String firstCode = generator.generate();
 		String secondCode = generator.generate();
