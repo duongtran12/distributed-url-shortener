@@ -65,12 +65,39 @@ public class ShortUrlService {
 	@Transactional(readOnly = true)
 	public ShortUrlResponse findOwnedById(Long userId, Long shortUrlId) {
 		findActiveUser(userId);
-		ShortUrl shortUrl = shortUrlRepository.findByIdAndOwnerId(shortUrlId, userId)
+		ShortUrl shortUrl = findOwnedShortUrl(userId, shortUrlId);
+		return ShortUrlResponse.from(shortUrl, properties.baseUrl());
+	}
+
+	@Transactional
+	public ShortUrlResponse updateStatus(
+			Long userId,
+			Long shortUrlId,
+			UpdateShortUrlStatusRequest request) {
+		findActiveUser(userId);
+		ShortUrl shortUrl = findOwnedShortUrl(userId, shortUrlId);
+
+		switch (request.status()) {
+			case ACTIVE -> shortUrl.enable();
+			case DISABLED -> shortUrl.disable();
+		}
+
+		if (shortUrl.getStatus() == ShortUrlStatus.BLOCKED) {
+			throw new ApiException(
+					HttpStatus.CONFLICT,
+					"SHORT_URL_BLOCKED",
+					"A blocked short URL cannot be modified by its owner");
+		}
+
+		return ShortUrlResponse.from(shortUrl, properties.baseUrl());
+	}
+
+	private ShortUrl findOwnedShortUrl(Long userId, Long shortUrlId) {
+		return shortUrlRepository.findByIdAndOwnerId(shortUrlId, userId)
 				.orElseThrow(() -> new ApiException(
 						HttpStatus.NOT_FOUND,
 						"SHORT_URL_NOT_FOUND",
 						"Short URL was not found"));
-		return ShortUrlResponse.from(shortUrl, properties.baseUrl());
 	}
 
 	private ShortUrl createWithCustomAlias(

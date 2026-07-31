@@ -1,6 +1,7 @@
 package com.duong.url_shortener.shorturl;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -14,6 +15,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.junit.jupiter.Container;
@@ -111,5 +113,57 @@ class ShortUrlManagementIntegrationTest {
 
 		mockMvc.perform(get("/api/v1/urls"))
 				.andExpect(status().isUnauthorized());
+	}
+
+	@Test
+	void shouldDisableAndReEnableOwnedUrl() throws Exception {
+		ShortUrl shortUrl = shortUrlRepository.saveAndFlush(
+				ShortUrl.create(owner, "toggle1", "https://example.com/toggle", false, null));
+
+		updateStatus(shortUrl.getId(), "DISABLED")
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.status").value("DISABLED"));
+
+		mockMvc.perform(get("/{shortCode}", "toggle1"))
+				.andExpect(status().isGone());
+
+		updateStatus(shortUrl.getId(), "ACTIVE")
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.status").value("ACTIVE"));
+	}
+
+	@Test
+	void shouldNotUpdateAnotherUsersUrlOrAcceptBlockedStatus() throws Exception {
+		ShortUrl foreignUrl = shortUrlRepository.saveAndFlush(
+				ShortUrl.create(otherUser, "foreign2", "https://example.com/foreign", false, null));
+
+		updateStatus(foreignUrl.getId(), "DISABLED")
+				.andExpect(status().isNotFound())
+				.andExpect(jsonPath("$.code").value("SHORT_URL_NOT_FOUND"));
+
+		ShortUrl ownedUrl = shortUrlRepository.saveAndFlush(
+				ShortUrl.create(owner, "owned03", "https://example.com/owned", false, null));
+
+		updateStatus(ownedUrl.getId(), "BLOCKED")
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("MALFORMED_REQUEST"));
+
+		ownedUrl.block();
+		shortUrlRepository.saveAndFlush(ownedUrl);
+
+		updateStatus(ownedUrl.getId(), "ACTIVE")
+				.andExpect(status().isConflict())
+				.andExpect(jsonPath("$.code").value("SHORT_URL_BLOCKED"));
+	}
+
+	private org.springframework.test.web.servlet.ResultActions updateStatus(
+			Long id,
+			String newStatus) throws Exception {
+		return mockMvc.perform(patch("/api/v1/urls/{id}/status", id)
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{"status": "%s"}
+						""".formatted(newStatus)));
 	}
 }

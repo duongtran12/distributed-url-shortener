@@ -9,6 +9,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -48,5 +49,13 @@ public class ShortUrlController {
 			@AuthenticationPrincipal Jwt jwt,
 			@PathVariable @Min(1) Long id) {
 		return shortUrlService.findOwnedById(jwt.getClaim("uid"), id);
+	}
+
+	@PatchMapping("/{id}/status")
+	public ShortUrlResponse updateStatus(
+			@AuthenticationPrincipal Jwt jwt,
+			@PathVariable @Min(1) Long id,
+			@Valid @RequestBody UpdateShortUrlStatusRequest request) {
+		return shortUrlService.updateStatus(jwt.getClaim("uid"), id, request);
 	}
 }
