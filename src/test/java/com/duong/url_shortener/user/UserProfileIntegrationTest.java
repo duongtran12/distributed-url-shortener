@@ -1,6 +1,7 @@
 package com.duong.url_shortener.user;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -17,6 +18,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
@@ -84,20 +86,82 @@ class UserProfileIntegrationTest {
 				.andExpect(jsonPath("$.code").value("ACCOUNT_DISABLED"));
 	}
 
-	private String login() throws Exception {
-		String response = mockMvc.perform(post("/api/v1/auth/login")
+	@Test
+	void shouldChangePasswordAndRejectTheOldPassword() throws Exception {
+		String accessToken = login();
+
+		mockMvc.perform(patch("/api/v1/users/me/password")
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("""
 						{
-						  "email": "student@example.com",
-						  "password": "strong-password"
+						  "currentPassword": "strong-password",
+						  "newPassword": "new-strong-password"
 						}
 						"""))
+				.andExpect(status().isNoContent());
+
+		loginWithPassword("strong-password")
+				.andExpect(status().isUnauthorized())
+				.andExpect(jsonPath("$.code").value("INVALID_CREDENTIALS"));
+
+		loginWithPassword("new-strong-password")
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.accessToken").isNotEmpty());
+	}
+
+	@Test
+	void shouldRejectIncorrectCurrentPassword() throws Exception {
+		String accessToken = login();
+
+		mockMvc.perform(patch("/api/v1/users/me/password")
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{
+						  "currentPassword": "incorrect-password",
+						  "newPassword": "new-strong-password"
+						}
+						"""))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("INVALID_CURRENT_PASSWORD"));
+	}
+
+	@Test
+	void shouldRejectReusingCurrentPassword() throws Exception {
+		String accessToken = login();
+
+		mockMvc.perform(patch("/api/v1/users/me/password")
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{
+						  "currentPassword": "strong-password",
+						  "newPassword": "strong-password"
+						}
+						"""))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("PASSWORD_UNCHANGED"));
+	}
+
+	private String login() throws Exception {
+		String response = loginWithPassword("strong-password")
 				.andExpect(status().isOk())
 				.andReturn()
 				.getResponse()
 				.getContentAsString();
 
 		return JsonPath.read(response, "$.accessToken");
+	}
+
+	private ResultActions loginWithPassword(String password) throws Exception {
+		return mockMvc.perform(post("/api/v1/auth/login")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{
+						  "email": "student@example.com",
+						  "password": "%s"
+						}
+						""".formatted(password)));
 	}
 }
