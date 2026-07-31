@@ -40,3 +40,5 @@ app:
   jwt:
     secret: ${JWT_SECRET}
     access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:PT15M}
+  short-url:
+    code-length: ${SHORT_CODE_LENGTH:7}
