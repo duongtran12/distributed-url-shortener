@@ -6,13 +6,17 @@ import com.duong.url_shortener.common.exception.ApiException;
 import com.duong.url_shortener.user.User;
 import com.duong.url_shortener.user.UserRepository;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class ShortUrlService {
 
 	private final UserRepository userRepository;
+	private final ShortUrlRepository shortUrlRepository;
 	private final ShortUrlInputValidator inputValidator;
 	private final ShortCodeGenerator shortCodeGenerator;
 	private final ShortUrlPersistenceService persistenceService;
@@ -20,11 +24,13 @@ public class ShortUrlService {
 
 	public ShortUrlService(
 			UserRepository userRepository,
+			ShortUrlRepository shortUrlRepository,
 			ShortUrlInputValidator inputValidator,
 			ShortCodeGenerator shortCodeGenerator,
 			ShortUrlPersistenceService persistenceService,
 			ShortUrlProperties properties) {
 		this.userRepository = userRepository;
+		this.shortUrlRepository = shortUrlRepository;
 		this.inputValidator = inputValidator;
 		this.shortCodeGenerator = shortCodeGenerator;
 		this.persistenceService = persistenceService;
@@ -41,6 +47,29 @@ public class ShortUrlService {
 				? createWithGeneratedCode(owner, originalUrl, request.expiresAt())
 				: createWithCustomAlias(owner, originalUrl, customAlias, request.expiresAt());
 
+		return ShortUrlResponse.from(shortUrl, properties.baseUrl());
+	}
+
+	@Transactional(readOnly = true)
+	public ShortUrlPageResponse findAllOwnedBy(Long userId, int page, int size) {
+		findActiveUser(userId);
+		PageRequest pageRequest = PageRequest.of(
+				page,
+				size,
+				Sort.by(Sort.Direction.DESC, "createdAt"));
+		return ShortUrlPageResponse.from(
+				shortUrlRepository.findAllByOwnerId(userId, pageRequest),
+				properties.baseUrl());
+	}
+
+	@Transactional(readOnly = true)
+	public ShortUrlResponse findOwnedById(Long userId, Long shortUrlId) {
+		findActiveUser(userId);
+		ShortUrl shortUrl = shortUrlRepository.findByIdAndOwnerId(shortUrlId, userId)
+				.orElseThrow(() -> new ApiException(
+						HttpStatus.NOT_FOUND,
+						"SHORT_URL_NOT_FOUND",
+						"Short URL was not found"));
 		return ShortUrlResponse.from(shortUrl, properties.baseUrl());
 	}
 
