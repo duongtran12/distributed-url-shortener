@@ -106,6 +106,11 @@ public class ShortUrl {
 		status = ShortUrlStatus.BLOCKED;
 	}
 
+	public void updateDestination(String originalUrl, Instant expiresAt) {
+		this.originalUrl = originalUrl;
+		this.expiresAt = expiresAt;
+	}
+
 	@PrePersist
 	void onCreate() {
 		Instant now = Instant.now();
