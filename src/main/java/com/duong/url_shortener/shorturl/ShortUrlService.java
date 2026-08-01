@@ -92,6 +92,27 @@ public class ShortUrlService {
 		return ShortUrlResponse.from(shortUrl, properties.baseUrl());
 	}
 
+	@Transactional
+	public ShortUrlResponse update(
+			Long userId,
+			Long shortUrlId,
+			UpdateShortUrlRequest request) {
+		findActiveUser(userId);
+		ShortUrl shortUrl = findOwnedShortUrl(userId, shortUrlId);
+
+		if (shortUrl.getStatus() == ShortUrlStatus.BLOCKED) {
+			throw new ApiException(
+					HttpStatus.CONFLICT,
+					"SHORT_URL_BLOCKED",
+					"A blocked short URL cannot be modified by its owner");
+		}
+
+		String originalUrl = inputValidator.normalizeAndValidateOriginalUrl(request.originalUrl());
+		inputValidator.validateExpiration(request.expiresAt(), Instant.now());
+		shortUrl.updateDestination(originalUrl, request.expiresAt());
+		return ShortUrlResponse.from(shortUrl, properties.baseUrl());
+	}
+
 	private ShortUrl findOwnedShortUrl(Long userId, Long shortUrlId) {
 		return shortUrlRepository.findByIdAndOwnerId(shortUrlId, userId)
 				.orElseThrow(() -> new ApiException(

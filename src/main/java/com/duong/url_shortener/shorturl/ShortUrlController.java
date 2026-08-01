@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -57,5 +58,13 @@ public class ShortUrlController {
 			@PathVariable @Min(1) Long id,
 			@Valid @RequestBody UpdateShortUrlStatusRequest request) {
 		return shortUrlService.updateStatus(jwt.getClaim("uid"), id, request);
+	}
+
+	@PutMapping("/{id}")
+	public ShortUrlResponse update(
+			@AuthenticationPrincipal Jwt jwt,
+			@PathVariable @Min(1) Long id,
+			@Valid @RequestBody UpdateShortUrlRequest request) {
+		return shortUrlService.update(jwt.getClaim("uid"), id, request);
 	}
 }

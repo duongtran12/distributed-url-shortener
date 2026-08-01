@@ -2,6 +2,8 @@ package com.duong.url_shortener.shorturl;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -154,6 +156,60 @@ class ShortUrlManagementIntegrationTest {
 		updateStatus(ownedUrl.getId(), "ACTIVE")
 				.andExpect(status().isConflict())
 				.andExpect(jsonPath("$.code").value("SHORT_URL_BLOCKED"));
+	}
+
+	@Test
+	void shouldUpdateOwnedUrlDestinationAndExpiration() throws Exception {
+		ShortUrl shortUrl = shortUrlRepository.saveAndFlush(
+				ShortUrl.create(owner, "editable", "https://example.com/old", false, null));
+
+		mockMvc.perform(put("/api/v1/urls/{id}", shortUrl.getId())
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{
+						  "originalUrl": "https://example.com/new",
+						  "expiresAt": "2099-12-31T23:59:59Z"
+						}
+						"""))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.shortCode").value("editable"))
+				.andExpect(jsonPath("$.originalUrl").value("https://example.com/new"))
+				.andExpect(jsonPath("$.expiresAt").value("2099-12-31T23:59:59Z"));
+
+		mockMvc.perform(get("/{shortCode}", "editable"))
+				.andExpect(status().isFound())
+				.andExpect(header().string(HttpHeaders.LOCATION, "https://example.com/new"));
+	}
+
+	@Test
+	void shouldRejectInvalidUpdateAndHideForeignUrl() throws Exception {
+		ShortUrl foreignUrl = shortUrlRepository.saveAndFlush(
+				ShortUrl.create(otherUser, "foreign3", "https://example.com/foreign", false, null));
+
+		mockMvc.perform(put("/api/v1/urls/{id}", foreignUrl.getId())
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{"originalUrl": "https://example.com/new"}
+						"""))
+				.andExpect(status().isNotFound())
+				.andExpect(jsonPath("$.code").value("SHORT_URL_NOT_FOUND"));
+
+		ShortUrl ownedUrl = shortUrlRepository.saveAndFlush(
+				ShortUrl.create(owner, "owned04", "https://example.com/owned", false, null));
+
+		mockMvc.perform(put("/api/v1/urls/{id}", ownedUrl.getId())
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{
+						  "originalUrl": "javascript:alert(1)",
+						  "expiresAt": "2020-01-01T00:00:00Z"
+						}
+						"""))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("UNSUPPORTED_URL_SCHEME"));
 	}
 
 	private org.springframework.test.web.servlet.ResultActions updateStatus(
