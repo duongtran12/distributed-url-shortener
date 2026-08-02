@@ -8,6 +8,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -66,5 +67,13 @@ public class ShortUrlController {
 			@PathVariable @Min(1) Long id,
 			@Valid @RequestBody UpdateShortUrlRequest request) {
 		return shortUrlService.update(jwt.getClaim("uid"), id, request);
+	}
+
+	@DeleteMapping("/{id}")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	public void delete(
+			@AuthenticationPrincipal Jwt jwt,
+			@PathVariable @Min(1) Long id) {
+		shortUrlService.delete(jwt.getClaim("uid"), id);
 	}
 }

@@ -113,6 +113,13 @@ public class ShortUrlService {
 		return ShortUrlResponse.from(shortUrl, properties.baseUrl());
 	}
 
+	@Transactional
+	public void delete(Long userId, Long shortUrlId) {
+		findActiveUser(userId);
+		ShortUrl shortUrl = findOwnedShortUrl(userId, shortUrlId);
+		shortUrlRepository.delete(shortUrl);
+	}
+
 	private ShortUrl findOwnedShortUrl(Long userId, Long shortUrlId) {
 		return shortUrlRepository.findByIdAndOwnerId(shortUrlId, userId)
 				.orElseThrow(() -> new ApiException(

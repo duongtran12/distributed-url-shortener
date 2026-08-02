@@ -1,6 +1,7 @@
 package com.duong.url_shortener.shorturl;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -210,6 +211,34 @@ class ShortUrlManagementIntegrationTest {
 						"""))
 				.andExpect(status().isBadRequest())
 				.andExpect(jsonPath("$.code").value("UNSUPPORTED_URL_SCHEME"));
+	}
+
+	@Test
+	void shouldDeleteOwnedUrlAndStopRedirecting() throws Exception {
+		ShortUrl shortUrl = shortUrlRepository.saveAndFlush(
+				ShortUrl.create(owner, "remove1", "https://example.com/remove", false, null));
+
+		mockMvc.perform(delete("/api/v1/urls/{id}", shortUrl.getId())
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken))
+				.andExpect(status().isNoContent());
+
+		mockMvc.perform(get("/{shortCode}", "remove1"))
+				.andExpect(status().isNotFound())
+				.andExpect(jsonPath("$.code").value("SHORT_URL_NOT_FOUND"));
+	}
+
+	@Test
+	void shouldNotDeleteAnotherUsersUrl() throws Exception {
+		ShortUrl foreignUrl = shortUrlRepository.saveAndFlush(
+				ShortUrl.create(otherUser, "foreign4", "https://example.com/foreign", false, null));
+
+		mockMvc.perform(delete("/api/v1/urls/{id}", foreignUrl.getId())
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken))
+				.andExpect(status().isNotFound())
+				.andExpect(jsonPath("$.code").value("SHORT_URL_NOT_FOUND"));
+
+		mockMvc.perform(get("/{shortCode}", "foreign4"))
+				.andExpect(status().isFound());
 	}
 
 	private org.springframework.test.web.servlet.ResultActions updateStatus(
