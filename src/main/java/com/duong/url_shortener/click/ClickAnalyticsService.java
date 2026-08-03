@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ClickAnalyticsService {
 
 	private static final long MAX_RANGE_DAYS = 366;
+	private static final int BREAKDOWN_LIMIT = 10;
 
 	private final UserRepository userRepository;
 	private final ShortUrlRepository shortUrlRepository;
@@ -88,6 +89,20 @@ public class ClickAnalyticsService {
 				.map(entry -> new DailyClickCount(entry.getKey(), entry.getValue()))
 				.toList();
 		long periodClicks = dailyClicks.stream().mapToLong(DailyClickCount::clicks).sum();
+		List<CategoryClickCount> browsers = List.of();
+		List<CategoryClickCount> operatingSystems = List.of();
+		List<CategoryClickCount> devices = List.of();
+		List<CategoryClickCount> referrers = List.of();
+		if (effectiveStart.isBefore(endExclusive)) {
+			browsers = queryBreakdown(
+					"browser", shortUrl.getShortCode(), effectiveStart, endExclusive);
+			operatingSystems = queryBreakdown(
+					"operating_system", shortUrl.getShortCode(), effectiveStart, endExclusive);
+			devices = queryBreakdown(
+					"device_type", shortUrl.getShortCode(), effectiveStart, endExclusive);
+			referrers = queryBreakdown(
+					"referrer", shortUrl.getShortCode(), effectiveStart, endExclusive);
+		}
 
 		return new ClickAnalyticsResponse(
 				shortUrl.getId(),
@@ -96,7 +111,38 @@ public class ClickAnalyticsService {
 				periodClicks,
 				from,
 				to,
-				dailyClicks);
+				dailyClicks,
+				browsers,
+				operatingSystems,
+				devices,
+				referrers);
+	}
+
+	private List<CategoryClickCount> queryBreakdown(
+			String column,
+			String shortCode,
+			Instant start,
+			Instant endExclusive) {
+		String sql = """
+				SELECT %s AS category, COUNT(*) AS clicks
+				FROM click_events
+				WHERE short_code = ?
+				  AND clicked_at >= ?
+				  AND clicked_at < ?
+				GROUP BY %s
+				ORDER BY clicks DESC, category ASC
+				LIMIT ?
+				""".formatted(column, column);
+
+		return jdbcTemplate.query(
+				sql,
+				(resultSet, rowNumber) -> new CategoryClickCount(
+						resultSet.getString("category"),
+						resultSet.getLong("clicks")),
+				shortCode,
+				Timestamp.from(start),
+				Timestamp.from(endExclusive),
+				BREAKDOWN_LIMIT);
 	}
 
 	private void validateRange(LocalDate from, LocalDate to) {
