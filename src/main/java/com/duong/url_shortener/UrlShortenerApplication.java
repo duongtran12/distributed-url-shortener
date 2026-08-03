@@ -1,12 +1,13 @@
 package com.duong.url_shortener;
 
 import com.duong.url_shortener.shorturl.ShortUrlProperties;
+import com.duong.url_shortener.shorturl.RedirectCacheProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
 @SpringBootApplication
-@EnableConfigurationProperties(ShortUrlProperties.class)
+@EnableConfigurationProperties({ShortUrlProperties.class, RedirectCacheProperties.class})
 public class UrlShortenerApplication {
 
 	public static void main(String[] args) {

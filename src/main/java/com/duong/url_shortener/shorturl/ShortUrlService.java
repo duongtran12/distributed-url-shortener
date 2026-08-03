@@ -17,6 +17,7 @@ public class ShortUrlService {
 
 	private final UserRepository userRepository;
 	private final ShortUrlRepository shortUrlRepository;
+	private final RedirectCache redirectCache;
 	private final ShortUrlInputValidator inputValidator;
 	private final ShortCodeGenerator shortCodeGenerator;
 	private final ShortUrlPersistenceService persistenceService;
@@ -25,12 +26,14 @@ public class ShortUrlService {
 	public ShortUrlService(
 			UserRepository userRepository,
 			ShortUrlRepository shortUrlRepository,
+			RedirectCache redirectCache,
 			ShortUrlInputValidator inputValidator,
 			ShortCodeGenerator shortCodeGenerator,
 			ShortUrlPersistenceService persistenceService,
 			ShortUrlProperties properties) {
 		this.userRepository = userRepository;
 		this.shortUrlRepository = shortUrlRepository;
+		this.redirectCache = redirectCache;
 		this.inputValidator = inputValidator;
 		this.shortCodeGenerator = shortCodeGenerator;
 		this.persistenceService = persistenceService;
@@ -89,6 +92,7 @@ public class ShortUrlService {
 					"A blocked short URL cannot be modified by its owner");
 		}
 
+		redirectCache.evict(shortUrl.getShortCode());
 		return ShortUrlResponse.from(shortUrl, properties.baseUrl());
 	}
 
@@ -110,6 +114,7 @@ public class ShortUrlService {
 		String originalUrl = inputValidator.normalizeAndValidateOriginalUrl(request.originalUrl());
 		inputValidator.validateExpiration(request.expiresAt(), Instant.now());
 		shortUrl.updateDestination(originalUrl, request.expiresAt());
+		redirectCache.evict(shortUrl.getShortCode());
 		return ShortUrlResponse.from(shortUrl, properties.baseUrl());
 	}
 
@@ -118,6 +123,7 @@ public class ShortUrlService {
 		findActiveUser(userId);
 		ShortUrl shortUrl = findOwnedShortUrl(userId, shortUrlId);
 		shortUrlRepository.delete(shortUrl);
+		redirectCache.evict(shortUrl.getShortCode());
 	}
 
 	private ShortUrl findOwnedShortUrl(Long userId, Long shortUrlId) {
