@@ -10,5 +10,9 @@ public record ClickAnalyticsResponse(
 		long periodClicks,
 		LocalDate from,
 		LocalDate to,
-		List<DailyClickCount> dailyClicks) {
+		List<DailyClickCount> dailyClicks,
+		List<CategoryClickCount> browsers,
+		List<CategoryClickCount> operatingSystems,
+		List<CategoryClickCount> devices,
+		List<CategoryClickCount> referrers) {
 }

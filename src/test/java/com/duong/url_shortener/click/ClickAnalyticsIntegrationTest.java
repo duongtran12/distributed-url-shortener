@@ -77,9 +77,16 @@ class ClickAnalyticsIntegrationTest {
 				ShortUrl.create(owner, "stats01", "https://example.com/stats", false, null));
 		LocalDate today = LocalDate.now(ZoneOffset.UTC);
 		Instant firstClick = Instant.now().plusSeconds(1);
-		clickEventStore.record(ClickEvent.create("stats01", firstClick));
-		clickEventStore.record(ClickEvent.create("stats01", firstClick.plusSeconds(60)));
-		clickEventStore.record(ClickEvent.create("stats01", firstClick.plusSeconds(120)));
+		String chromeWindows = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+				+ "Chrome/126.0.0.0 Safari/537.36";
+		String safariIphone = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) "
+				+ "Mobile/15E148 Version/17.0 Safari/604.1";
+		clickEventStore.record(ClickEvent.create(
+				"stats01", firstClick, chromeWindows, "https://google.com/search?q=one"));
+		clickEventStore.record(ClickEvent.create(
+				"stats01", firstClick.plusSeconds(60), chromeWindows, "https://google.com/other"));
+		clickEventStore.record(ClickEvent.create(
+				"stats01", firstClick.plusSeconds(120), safariIphone, null));
 
 		mockMvc.perform(get("/api/v1/urls/{id}/analytics", shortUrl.getId())
 				.param("from", today.minusDays(2).toString())
@@ -92,7 +99,16 @@ class ClickAnalyticsIntegrationTest {
 				.andExpect(jsonPath("$.dailyClicks.length()").value(3))
 				.andExpect(jsonPath("$.dailyClicks[0].clicks").value(0))
 				.andExpect(jsonPath("$.dailyClicks[1].clicks").value(0))
-				.andExpect(jsonPath("$.dailyClicks[2].clicks").value(3));
+				.andExpect(jsonPath("$.dailyClicks[2].clicks").value(3))
+				.andExpect(jsonPath("$.browsers[0].category").value("Chrome"))
+				.andExpect(jsonPath("$.browsers[0].clicks").value(2))
+				.andExpect(jsonPath("$.browsers[1].category").value("Safari"))
+				.andExpect(jsonPath("$.operatingSystems[0].category").value("Windows"))
+				.andExpect(jsonPath("$.devices[0].category").value("DESKTOP"))
+				.andExpect(jsonPath("$.devices[1].category").value("MOBILE"))
+				.andExpect(jsonPath("$.referrers[0].category").value("google.com"))
+				.andExpect(jsonPath("$.referrers[0].clicks").value(2))
+				.andExpect(jsonPath("$.referrers[1].category").value("direct"));
 	}
 
 	@Test
