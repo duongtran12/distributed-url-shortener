@@ -4,9 +4,11 @@ import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.core.QueueBuilder;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnProperty(
@@ -23,16 +25,39 @@ public class RabbitClickTrackingConfig {
 
 	@Bean
 	Queue clickQueue(ClickTrackingProperties properties) {
-		return new Queue(properties.queue(), true);
+		return QueueBuilder.durable(properties.queue())
+				.deadLetterExchange(properties.deadLetterExchange())
+				.deadLetterRoutingKey(properties.deadLetterRoutingKey())
+				.build();
 	}
 
 	@Bean
 	Binding clickBinding(
-			DirectExchange clickExchange,
-			Queue clickQueue,
+			@Qualifier("clickExchange") DirectExchange clickExchange,
+			@Qualifier("clickQueue") Queue clickQueue,
 			ClickTrackingProperties properties) {
 		return BindingBuilder.bind(clickQueue)
 				.to(clickExchange)
 				.with(properties.routingKey());
+	}
+
+	@Bean
+	DirectExchange clickDeadLetterExchange(ClickTrackingProperties properties) {
+		return new DirectExchange(properties.deadLetterExchange(), true, false);
+	}
+
+	@Bean
+	Queue clickDeadLetterQueue(ClickTrackingProperties properties) {
+		return QueueBuilder.durable(properties.deadLetterQueue()).build();
+	}
+
+	@Bean
+	Binding clickDeadLetterBinding(
+			@Qualifier("clickDeadLetterExchange") DirectExchange clickDeadLetterExchange,
+			@Qualifier("clickDeadLetterQueue") Queue clickDeadLetterQueue,
+			ClickTrackingProperties properties) {
+		return BindingBuilder.bind(clickDeadLetterQueue)
+				.to(clickDeadLetterExchange)
+				.with(properties.deadLetterRoutingKey());
 	}
 }

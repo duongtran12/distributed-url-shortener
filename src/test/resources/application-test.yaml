@@ -16,5 +16,8 @@ app:
   click-tracking:
     enabled: false
     exchange: url-shortener.clicks
-    queue: url-shortener.clicks.count
+    queue: url-shortener.clicks.count.v2
     routing-key: click.recorded
+    dead-letter-exchange: url-shortener.clicks.dlx
+    dead-letter-queue: url-shortener.clicks.dead
+    dead-letter-routing-key: click.dead

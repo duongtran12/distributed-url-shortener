@@ -10,5 +10,8 @@ public record ClickTrackingProperties(
 		boolean enabled,
 		@NotBlank String exchange,
 		@NotBlank String queue,
-		@NotBlank String routingKey) {
+		@NotBlank String routingKey,
+		@NotBlank String deadLetterExchange,
+		@NotBlank String deadLetterQueue,
+		@NotBlank String deadLetterRoutingKey) {
 }

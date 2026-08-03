@@ -31,6 +31,15 @@ spring:
     username: ${RABBITMQ_USERNAME:url_shortener}
     password: ${RABBITMQ_PASSWORD:url_shortener_local}
     connection-timeout: ${RABBITMQ_CONNECTION_TIMEOUT:2s}
+    listener:
+      simple:
+        default-requeue-rejected: false
+        retry:
+          enabled: true
+          initial-interval: 1s
+          max-attempts: 3
+          max-interval: 10s
+          multiplier: 2
 
 server:
   port: ${SERVER_PORT:8080}
@@ -63,5 +72,8 @@ app:
   click-tracking:
     enabled: ${CLICK_TRACKING_ENABLED:true}
     exchange: url-shortener.clicks
-    queue: url-shortener.clicks.count
+    queue: url-shortener.clicks.count.v2
     routing-key: click.recorded
+    dead-letter-exchange: url-shortener.clicks.dlx
+    dead-letter-queue: url-shortener.clicks.dead
+    dead-letter-routing-key: click.dead
