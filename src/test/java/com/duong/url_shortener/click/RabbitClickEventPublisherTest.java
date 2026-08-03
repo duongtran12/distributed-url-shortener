@@ -20,7 +20,10 @@ class RabbitClickEventPublisherTest {
 			true,
 			"clicks.exchange",
 			"clicks.queue",
-			"click.recorded");
+			"click.recorded",
+			"clicks.dlx",
+			"clicks.dead",
+			"click.dead");
 
 	@Test
 	void shouldPublishJsonClickEvent() {
