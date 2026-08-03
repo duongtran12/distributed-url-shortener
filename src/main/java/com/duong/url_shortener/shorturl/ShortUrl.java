@@ -46,6 +46,9 @@ public class ShortUrl {
 	@Column(name = "expires_at")
 	private Instant expiresAt;
 
+	@Column(name = "click_count", nullable = false)
+	private long clickCount;
+
 	@Version
 	@Column(nullable = false)
 	private long version;
@@ -149,6 +152,10 @@ public class ShortUrl {
 
 	public Instant getExpiresAt() {
 		return expiresAt;
+	}
+
+	public long getClickCount() {
+		return clickCount;
 	}
 
 	public long getVersion() {
