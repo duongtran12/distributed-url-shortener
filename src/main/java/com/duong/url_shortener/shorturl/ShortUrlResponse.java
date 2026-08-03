@@ -10,6 +10,7 @@ public record ShortUrlResponse(
 		ShortUrlStatus status,
 		boolean customAlias,
 		Instant expiresAt,
+		long clickCount,
 		Instant createdAt) {
 
 	static ShortUrlResponse from(ShortUrl shortUrl, String baseUrl) {
@@ -25,6 +26,7 @@ public record ShortUrlResponse(
 				shortUrl.getStatus(),
 				shortUrl.isCustomAlias(),
 				shortUrl.getExpiresAt(),
+				shortUrl.getClickCount(),
 				shortUrl.getCreatedAt());
 	}
 }

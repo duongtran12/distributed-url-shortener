@@ -25,6 +25,13 @@ spring:
       port: ${REDIS_PORT:6379}
       timeout: ${REDIS_TIMEOUT:PT2S}
 
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:url_shortener}
+    password: ${RABBITMQ_PASSWORD:url_shortener_local}
+    connection-timeout: ${RABBITMQ_CONNECTION_TIMEOUT:2s}
+
 server:
   port: ${SERVER_PORT:8080}
 
@@ -53,3 +60,8 @@ app:
   redirect-cache:
     enabled: ${REDIRECT_CACHE_ENABLED:true}
     ttl: ${REDIRECT_CACHE_TTL:PT1H}
+  click-tracking:
+    enabled: ${CLICK_TRACKING_ENABLED:true}
+    exchange: url-shortener.clicks
+    queue: url-shortener.clicks.count
+    routing-key: click.recorded
