@@ -33,7 +33,11 @@ class RabbitClickEventPublisherTest {
 				objectMapper(),
 				properties);
 
-		publisher.publish("abc1234", Instant.parse("2030-01-01T00:00:00Z"));
+		publisher.publish(
+				"abc1234",
+				Instant.parse("2030-01-01T00:00:00Z"),
+				"Mozilla/5.0",
+				"https://google.com/search?q=private");
 
 		verify(rabbitTemplate).convertAndSend(
 				eq("clicks.exchange"),
@@ -52,7 +56,7 @@ class RabbitClickEventPublisherTest {
 				objectMapper(),
 				properties);
 
-		assertDoesNotThrow(() -> publisher.publish("abc1234", Instant.now()));
+		assertDoesNotThrow(() -> publisher.publish("abc1234", Instant.now(), null, null));
 	}
 
 	private ObjectMapper objectMapper() {
