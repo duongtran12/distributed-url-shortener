@@ -35,9 +35,10 @@ public class RabbitClickEventPublisher implements ClickEventPublisher {
 	}
 
 	@Override
-	public void publish(String shortCode, Instant clickedAt) {
+	public void publish(String shortCode, Instant clickedAt, String userAgent, String referrer) {
 		try {
-			String payload = objectMapper.writeValueAsString(ClickEvent.create(shortCode, clickedAt));
+			String payload = objectMapper.writeValueAsString(
+					ClickEvent.create(shortCode, clickedAt, userAgent, referrer));
 			rabbitTemplate.convertAndSend(
 					properties.exchange(),
 					properties.routingKey(),
