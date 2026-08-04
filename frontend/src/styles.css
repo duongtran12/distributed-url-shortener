@@ -111,6 +111,34 @@ h1 em { color: #65e7ae; font-family: 'Playfair Display', serif; font-weight: 600
 .summary-grid article:last-child { border-right: 0; }
 .summary-grid span { color: #788e84; font: 10px 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .1em; }
 .summary-grid strong { color: #eaf6f0; font: 28px 'DM Mono', monospace; }
+.summary-grid--analytics { grid-template-columns: repeat(4, 1fr); }
+.analytics-section { padding: 38px 0; border-bottom: 1px solid #20332c; }
+.analytics-heading { margin-bottom: 24px; }
+.range-picker { display: flex; border: 1px solid #294238; }
+.range-picker button { padding: 8px 11px; color: #657d72; background: transparent; border: 0; border-right: 1px solid #294238; font: 9px 'DM Mono', monospace; }
+.range-picker button:last-child { border-right: 0; }
+.range-picker button.active { color: #06130e; background: #55e6a8; }
+.analytics-panel { min-height: 290px; display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 30px; align-items: center; padding: 25px 26px 18px; background: linear-gradient(135deg, rgba(15,35,28,.92), rgba(8,22,17,.82)); border: 1px solid #28463a; transition: opacity .2s ease; }
+.analytics-panel--loading { opacity: .48; }
+.analytics-total { display: grid; align-content: center; gap: 9px; border-right: 1px solid #294238; height: 100%; }
+.analytics-total span { color: #768d82; font: 9px 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .1em; }
+.analytics-total strong { color: #61e5ad; font: 37px 'DM Mono', monospace; }
+.analytics-total small { color: #50695e; font: 8px 'DM Mono', monospace; }
+.traffic-chart { min-width: 0; overflow: hidden; }
+.traffic-chart svg { display: block; width: 100%; height: 230px; overflow: visible; }
+.chart-gridline { stroke: #203b30; stroke-width: 1; stroke-dasharray: 3 6; }
+.analytics-area { fill: url(#analytics-fill); }
+.analytics-line { fill: none; stroke: #55e6a8; stroke-width: 2.3; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.analytics-point { fill: #9af5ce; stroke: #123326; stroke-width: 1.5; }
+.traffic-chart text { fill: #587066; font: 9px 'DM Mono', monospace; }
+.top-links { margin-top: 12px; border: 1px solid #223c31; }
+.top-links-title, .top-link-row { display: grid; grid-template-columns: 42px minmax(0, 1fr) auto; gap: 15px; align-items: center; padding: 13px 17px; border-bottom: 1px solid #20382f; }
+.top-links-title { grid-template-columns: 1fr auto; color: #60796e; font: 9px 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .09em; }
+.top-link-row:last-child { border-bottom: 0; }
+.top-link-row > div { min-width: 0; display: grid; gap: 4px; }
+.top-link-row strong { color: #cfe1d8; font: 12px 'DM Mono', monospace; }
+.top-link-row small { overflow: hidden; color: #5f766b; text-overflow: ellipsis; white-space: nowrap; }
+.top-link-row > span:last-child { color: #77cfa8; font: 11px 'DM Mono', monospace; }
 .links-section { padding-top: 38px; }
 .section-heading, .form-heading { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
 .section-heading h2, .form-heading h2 { margin: 6px 0 0; font-size: 27px; letter-spacing: -.04em; }
@@ -178,6 +206,8 @@ h1 em { color: #65e7ae; font-family: 'Playfair Display', serif; font-weight: 600
   .form-grid { grid-template-columns: 1fr; }
   .link-card { grid-template-columns: 1fr auto; }
   .link-actions { grid-column: 1 / -1; }
+  .analytics-panel { grid-template-columns: 1fr; }
+  .analytics-total { height: auto; padding-bottom: 17px; border-right: 0; border-bottom: 1px solid #294238; }
 }
 
 @media (max-width: 720px) {

@@ -11,5 +11,6 @@ public record AnalyticsOverviewResponse(
 		long periodUniqueVisitors,
 		LocalDate from,
 		LocalDate to,
+		List<DailyClickCount> dailyClicks,
 		List<TopUrlAnalytics> topUrls) {
 }

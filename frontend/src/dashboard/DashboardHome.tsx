@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ApiClientError } from '../auth/authApi'
 import type { UserProfile } from '../auth/types'
+import { getAnalyticsOverview } from '../analytics/analyticsApi'
+import { TrafficChart } from '../analytics/TrafficChart'
+import type { AnalyticsOverview } from '../analytics/types'
 import { HealthBadge, type HealthState } from '../components/HealthBadge'
 import { CreateLinkForm } from '../links/CreateLinkForm'
 import { LinkCard } from '../links/LinkCard'
@@ -21,7 +24,12 @@ export function DashboardHome({ user, health, onLogout }: DashboardHomeProps) {
   const [links, setLinks] = useState<ShortUrlPage>(EMPTY_PAGE)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [showCreate, setShowCreate] = useState(false)
+	const [showCreate, setShowCreate] = useState(false)
+	const [analytics, setAnalytics] = useState<AnalyticsOverview | null>(null)
+	const [analyticsDays, setAnalyticsDays] = useState(30)
+	const [analyticsLoading, setAnalyticsLoading] = useState(true)
+	const [analyticsError, setAnalyticsError] = useState('')
+	const [analyticsRefresh, setAnalyticsRefresh] = useState(0)
 
   const loadPage = useCallback(async (page: number) => {
     setLoading(true)
@@ -35,7 +43,7 @@ export function DashboardHome({ user, health, onLogout }: DashboardHomeProps) {
     }
   }, [])
 
-  useEffect(() => {
+	useEffect(() => {
     let active = true
     getShortUrls(0)
       .then((page) => { if (active) setLinks(page) })
@@ -44,7 +52,18 @@ export function DashboardHome({ user, health, onLogout }: DashboardHomeProps) {
       })
       .finally(() => { if (active) setLoading(false) })
     return () => { active = false }
-  }, [])
+	}, [])
+
+	useEffect(() => {
+		let active = true
+		getAnalyticsOverview(analyticsDays)
+			.then((overview) => { if (active) setAnalytics(overview) })
+			.catch((caught: unknown) => {
+				if (active) setAnalyticsError(caught instanceof ApiClientError ? caught.message : 'Could not load analytics.')
+			})
+			.finally(() => { if (active) setAnalyticsLoading(false) })
+		return () => { active = false }
+	}, [analyticsDays, analyticsRefresh])
 
   const pageClicks = useMemo(
     () => links.content.reduce((total, link) => total + link.clickCount, 0),
@@ -55,31 +74,47 @@ export function DashboardHome({ user, health, onLogout }: DashboardHomeProps) {
     [links.content],
   )
 
-  function handleCreated(created: ShortUrl) {
+	function handleCreated(created: ShortUrl) {
     setShowCreate(false)
     setLinks((current) => ({
       ...current,
       content: [created, ...current.content].slice(0, current.size),
       totalElements: current.totalElements + 1,
       totalPages: Math.ceil((current.totalElements + 1) / current.size),
-    }))
+		}))
+		refreshAnalytics()
   }
 
-  function handleUpdated(updated: ShortUrl) {
+	function handleUpdated(updated: ShortUrl) {
     setLinks((current) => ({
       ...current,
       content: current.content.map((link) => link.id === updated.id ? updated : link),
-    }))
+		}))
+		refreshAnalytics()
   }
 
-  function handleDeleted(id: number) {
+	function handleDeleted(id: number) {
     setLinks((current) => ({
       ...current,
       content: current.content.filter((link) => link.id !== id),
       totalElements: Math.max(0, current.totalElements - 1),
       totalPages: Math.ceil(Math.max(0, current.totalElements - 1) / current.size),
-    }))
-  }
+		}))
+		refreshAnalytics()
+	}
+
+	function refreshAnalytics() {
+		setAnalyticsLoading(true)
+		setAnalyticsError('')
+		setAnalyticsRefresh((current) => current + 1)
+	}
+
+	function changeAnalyticsRange(days: number) {
+		if (days === analyticsDays) return
+		setAnalyticsLoading(true)
+		setAnalyticsError('')
+		setAnalyticsDays(days)
+	}
 
   return (
     <main className="dashboard-shell">
@@ -99,11 +134,35 @@ export function DashboardHome({ user, health, onLogout }: DashboardHomeProps) {
           <div className="dashboard-identity"><HealthBadge health={health} /><span>{user.email}</span></div>
         </header>
 
-        <section className="summary-grid" aria-label="Link summary">
-          <article><span>Total links</span><strong>{links.totalElements.toLocaleString()}</strong></article>
-          <article><span>Active on page</span><strong>{activeLinks.toLocaleString()}</strong></article>
-          <article><span>Clicks on page</span><strong>{pageClicks.toLocaleString()}</strong></article>
-        </section>
+		<section className="summary-grid summary-grid--analytics" aria-label="Account analytics summary">
+		  <article><span>Total links</span><strong>{(analytics?.totalUrls ?? links.totalElements).toLocaleString()}</strong></article>
+		  <article><span>Active links</span><strong>{(analytics?.activeUrls ?? activeLinks).toLocaleString()}</strong></article>
+		  <article><span>Period clicks</span><strong>{(analytics?.periodClicks ?? pageClicks).toLocaleString()}</strong></article>
+		  <article><span>Unique visitors</span><strong>{(analytics?.periodUniqueVisitors ?? 0).toLocaleString()}</strong></article>
+		</section>
+
+		<section className="analytics-section" id="analytics">
+		  <div className="section-heading analytics-heading">
+			<div><span className="capability-index">TRAFFIC SIGNAL</span><h2>Click activity</h2></div>
+			<div className="range-picker" aria-label="Analytics date range">
+			  {[7, 30, 90].map((days) => <button key={days} className={analyticsDays === days ? 'active' : ''} type="button" onClick={() => changeAnalyticsRange(days)}>{days}D</button>)}
+			</div>
+		  </div>
+		  {analyticsError ? <div className="auth-error links-load-error">{analyticsError}<button type="button" onClick={refreshAnalytics}>Retry</button></div> : (
+			<div className={`analytics-panel ${analyticsLoading ? 'analytics-panel--loading' : ''}`}>
+			  <div className="analytics-total"><span>Lifetime clicks</span><strong>{(analytics?.lifetimeClicks ?? 0).toLocaleString()}</strong><small>{analytics?.from} / {analytics?.to}</small></div>
+			  <TrafficChart data={analytics?.dailyClicks ?? []} />
+			</div>
+		  )}
+		  {analytics && analytics.topUrls.length > 0 && (
+			<div className="top-links">
+			  <div className="top-links-title"><span>Top routes</span><span>Clicks / Visitors</span></div>
+			  {analytics.topUrls.slice(0, 5).map((link, index) => (
+				<div className="top-link-row" key={link.shortUrlId}><span className="capability-index">0{index + 1}</span><div><strong>/{link.shortCode}</strong><small>{link.originalUrl}</small></div><span>{link.clicks.toLocaleString()} / {link.uniqueVisitors.toLocaleString()}</span></div>
+			  ))}
+			</div>
+		  )}
+		</section>
 
         <section className="links-section" id="links">
           <div className="section-heading">
