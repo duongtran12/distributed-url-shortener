@@ -49,6 +49,7 @@ public class SecurityConfig {
 						.requestMatchers(HttpMethod.POST, "/api/v1/auth/register", "/api/v1/auth/login").permitAll()
 						.requestMatchers(HttpMethod.GET, "/{shortCode}").permitAll()
 						.requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
+						.requestMatchers("/actuator/prometheus").permitAll()
 						.anyRequest().authenticated())
 				.oauth2ResourceServer(resourceServer -> resourceServer
 						.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())))

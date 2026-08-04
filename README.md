@@ -95,6 +95,17 @@ The production-like Compose stack builds the Spring Boot and React images, serve
 
 Stop the stack with `docker compose down`. This preserves named volumes; adding `--volumes` also deletes the local database and broker data.
 
+## Metrics
+
+The Docker stack runs Prometheus at `http://localhost:9090`. It discovers and scrapes every backend replica through Docker DNS.
+
+Useful custom metrics include:
+
+- `shortener_redirect_resolutions_total`, tagged by `source=cache|database`
+- `shortener_redirect_failures_total`, tagged by `reason=not_found|unavailable`
+
+JVM, HTTP server, HikariCP, and process metrics are also exported by Spring Boot Actuator. The Prometheus endpoint is available only on the backend management port inside the Docker network; Nginx exposes health but does not expose metrics publicly.
+
 ## Tests
 
 The application context test uses Testcontainers to start an isolated PostgreSQL instance. Docker Desktop must be running, but the Compose database does not need to be started.

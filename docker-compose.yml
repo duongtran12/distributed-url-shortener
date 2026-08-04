@@ -69,12 +69,14 @@ services:
       VISITOR_HASH_SECRET: ${VISITOR_HASH_SECRET:-${JWT_SECRET}}
       APP_BASE_URL: http://localhost:${APP_PORT:-8080}
       FORWARD_HEADERS_STRATEGY: NATIVE
+      MANAGEMENT_SERVER_PORT: 8081
       REDIRECT_CACHE_ENABLED: ${REDIRECT_CACHE_ENABLED:-true}
       CLICK_TRACKING_ENABLED: ${CLICK_TRACKING_ENABLED:-true}
       RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}
       RATE_LIMIT_FAIL_OPEN: ${RATE_LIMIT_FAIL_OPEN:-true}
     expose:
       - "8080"
+      - "8081"
     depends_on:
       postgres:
         condition: service_healthy
@@ -83,7 +85,7 @@ services:
       rabbitmq:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:8080/actuator/health || exit 1"]
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8081/actuator/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 12
@@ -93,6 +95,25 @@ services:
       resources:
         limits:
           memory: 768M
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v3.7.3
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:9090/-/healthy || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
     restart: unless-stopped
 
   nginx:
@@ -115,3 +136,4 @@ volumes:
   postgres_data:
   redis_data:
   rabbitmq_data:
+  prometheus_data:

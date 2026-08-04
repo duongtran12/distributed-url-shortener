@@ -15,5 +15,5 @@ WORKDIR /app
 COPY --from=builder /workspace/target/url-shortener-*.jar app.jar
 USER app
 
-EXPOSE 8080
+EXPOSE 8080 8081
 ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75", "-jar", "/app/app.jar"]
