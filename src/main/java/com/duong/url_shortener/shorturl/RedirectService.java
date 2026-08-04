@@ -14,27 +14,37 @@ public class RedirectService {
 
 	private final ShortUrlRepository shortUrlRepository;
 	private final RedirectCache redirectCache;
+	private final RedirectMetrics redirectMetrics;
 
-	public RedirectService(ShortUrlRepository shortUrlRepository, RedirectCache redirectCache) {
+	public RedirectService(
+			ShortUrlRepository shortUrlRepository,
+			RedirectCache redirectCache,
+			RedirectMetrics redirectMetrics) {
 		this.shortUrlRepository = shortUrlRepository;
 		this.redirectCache = redirectCache;
+		this.redirectMetrics = redirectMetrics;
 	}
 
 	@Transactional(readOnly = true)
 	public URI resolve(String shortCode) {
 		Optional<String> cachedUrl = redirectCache.get(shortCode);
 		if (cachedUrl.isPresent()) {
+			redirectMetrics.recordResolution("cache");
 			return URI.create(cachedUrl.get());
 		}
 
 		ShortUrl shortUrl = shortUrlRepository.findByShortCode(shortCode)
-				.orElseThrow(() -> new ApiException(
-						HttpStatus.NOT_FOUND,
-						"SHORT_URL_NOT_FOUND",
-						"Short URL does not exist"));
+				.orElseThrow(() -> {
+					redirectMetrics.recordFailure("not_found");
+					return new ApiException(
+							HttpStatus.NOT_FOUND,
+							"SHORT_URL_NOT_FOUND",
+							"Short URL does not exist");
+				});
 
 		Instant now = Instant.now();
 		if (!shortUrl.isRedirectableAt(now)) {
+			redirectMetrics.recordFailure("unavailable");
 			throw new ApiException(
 					HttpStatus.GONE,
 					"SHORT_URL_UNAVAILABLE",
@@ -46,6 +56,7 @@ public class RedirectService {
 				shortUrl.getOriginalUrl(),
 				shortUrl.getExpiresAt(),
 				now);
+		redirectMetrics.recordResolution("database");
 		return URI.create(shortUrl.getOriginalUrl());
 	}
 }

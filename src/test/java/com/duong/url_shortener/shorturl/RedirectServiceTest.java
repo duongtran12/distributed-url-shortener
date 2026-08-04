@@ -20,18 +20,21 @@ class RedirectServiceTest {
 	void shouldReturnCacheHitWithoutQueryingPostgres() {
 		ShortUrlRepository repository = mock(ShortUrlRepository.class);
 		RedirectCache cache = mock(RedirectCache.class);
+		RedirectMetrics metrics = mock(RedirectMetrics.class);
 		when(cache.get("cached1")).thenReturn(Optional.of("https://example.com/cached"));
 
-		URI result = new RedirectService(repository, cache).resolve("cached1");
+		URI result = new RedirectService(repository, cache, metrics).resolve("cached1");
 
 		assertEquals(URI.create("https://example.com/cached"), result);
 		verifyNoInteractions(repository);
+		verify(metrics).recordResolution("cache");
 	}
 
 	@Test
 	void shouldPopulateCacheAfterPostgresLookup() {
 		ShortUrlRepository repository = mock(ShortUrlRepository.class);
 		RedirectCache cache = mock(RedirectCache.class);
+		RedirectMetrics metrics = mock(RedirectMetrics.class);
 		ShortUrl shortUrl = ShortUrl.create(
 				null,
 				"miss001",
@@ -41,7 +44,7 @@ class RedirectServiceTest {
 		when(cache.get("miss001")).thenReturn(Optional.empty());
 		when(repository.findByShortCode("miss001")).thenReturn(Optional.of(shortUrl));
 
-		URI result = new RedirectService(repository, cache).resolve("miss001");
+		URI result = new RedirectService(repository, cache, metrics).resolve("miss001");
 
 		assertEquals(URI.create("https://example.com/database"), result);
 		verify(cache).put(
@@ -49,5 +52,6 @@ class RedirectServiceTest {
 				eq("https://example.com/database"),
 				eq(null),
 				any(Instant.class));
+		verify(metrics).recordResolution("database");
 	}
 }

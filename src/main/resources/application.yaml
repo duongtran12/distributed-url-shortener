@@ -50,10 +50,12 @@ logging:
     root: INFO
 
 management:
+  server:
+    port: ${MANAGEMENT_SERVER_PORT:${SERVER_PORT:8080}}
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,prometheus
   endpoint:
     health:
       probes:
