@@ -4,7 +4,7 @@ A portfolio project built incrementally with Java 21, Spring Boot, PostgreSQL, R
 
 ## Current status
 
-The backend includes authentication, URL management, Redis caching and distributed rate limiting, RabbitMQ click tracking, and analytics APIs. The React dashboard is under active development.
+The application includes authentication, URL management, Redis caching and distributed rate limiting, RabbitMQ click tracking, analytics APIs, and a React analytics dashboard.
 
 ## Prerequisites
 
@@ -55,6 +55,43 @@ npm run dev
 ```
 
 Open `http://localhost:5173`. Vite proxies backend requests to `http://localhost:8080` during local development.
+
+## Full Docker stack
+
+The production-like Compose stack builds the Spring Boot and React images, serves the frontend through Nginx, and load-balances API traffic across two backend replicas.
+
+1. Create `.env` from the example and replace every `change_me` value:
+
+   ```powershell
+   Copy-Item .env.example .env
+   ```
+
+2. Generate a Base64-encoded JWT secret containing at least 32 bytes:
+
+   ```powershell
+   $jwtBytes = New-Object byte[] 32
+   [Security.Cryptography.RandomNumberGenerator]::Fill($jwtBytes)
+   [Convert]::ToBase64String($jwtBytes)
+   ```
+
+   Paste the printed value after `JWT_SECRET=` in `.env`. Keep `.env` local and never commit it.
+
+3. Build and start the complete stack:
+
+   ```powershell
+   docker compose up -d --build --wait
+   ```
+
+4. Open the application at `http://localhost:8080`. RabbitMQ management is available at `http://localhost:15672`.
+
+5. Inspect container health or follow application logs:
+
+   ```powershell
+   docker compose ps
+   docker compose logs -f backend nginx
+   ```
+
+Stop the stack with `docker compose down`. This preserves named volumes; adding `--volumes` also deletes the local database and broker data.
 
 ## Tests
 

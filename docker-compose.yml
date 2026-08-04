@@ -50,6 +50,67 @@ services:
       retries: 10
     restart: unless-stopped
 
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-url_shortener}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-url_shortener_local}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      VISITOR_HASH_SECRET: ${VISITOR_HASH_SECRET:-${JWT_SECRET}}
+      APP_BASE_URL: http://localhost:${APP_PORT:-8080}
+      FORWARD_HEADERS_STRATEGY: NATIVE
+      REDIRECT_CACHE_ENABLED: ${REDIRECT_CACHE_ENABLED:-true}
+      CLICK_TRACKING_ENABLED: ${CLICK_TRACKING_ENABLED:-true}
+      RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}
+      RATE_LIMIT_FAIL_OPEN: ${RATE_LIMIT_FAIL_OPEN:-true}
+    expose:
+      - "8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:8080/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          memory: 768M
+    restart: unless-stopped
+
+  nginx:
+    build:
+      context: frontend
+      dockerfile: Dockerfile
+    ports:
+      - "${APP_PORT:-8080}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   redis_data:
