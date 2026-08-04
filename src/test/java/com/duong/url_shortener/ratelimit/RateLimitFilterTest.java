@@ -9,6 +9,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Duration;
+import java.time.Instant;
+import java.util.Map;
 
 import com.duong.url_shortener.click.VisitorFingerprintService;
 import jakarta.servlet.FilterChain;
@@ -17,6 +19,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import tools.jackson.databind.ObjectMapper;
 
 class RateLimitFilterTest {
@@ -67,6 +71,27 @@ class RateLimitFilterTest {
 		filter.doFilter(request, response, chain);
 
 		assertEquals("59", response.getHeader("RateLimit-Remaining"));
+		verify(chain).doFilter(request, response);
+	}
+
+	@Test
+	void shouldUseNumericJwtUserIdForAuthenticatedApiQuota() throws Exception {
+		MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/users/me");
+		MockHttpServletResponse response = new MockHttpServletResponse();
+		FilterChain chain = mock(FilterChain.class);
+		Jwt jwt = new Jwt(
+				"token",
+				Instant.now(),
+				Instant.now().plusSeconds(900),
+				Map.of("alg", "HS256"),
+				Map.of("sub", "user@example.com", "uid", 42L));
+		SecurityContextHolder.getContext().setAuthentication(new JwtAuthenticationToken(jwt));
+		when(rateLimiter.check("api", "user:42", 120))
+				.thenReturn(new RateLimitDecision(true, 120, 119, 60));
+
+		filter.doFilter(request, response, chain);
+
+		assertEquals("119", response.getHeader("RateLimit-Remaining"));
 		verify(chain).doFilter(request, response);
 	}
 }
