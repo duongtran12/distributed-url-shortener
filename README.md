@@ -1,5 +1,7 @@
 # Distributed URL Shortener & Analytics Platform
 
+[![Continuous Integration](https://github.com/duongtran12/distributed-url-shortener/actions/workflows/ci.yml/badge.svg)](https://github.com/duongtran12/distributed-url-shortener/actions/workflows/ci.yml)
+
 A portfolio project built incrementally with Java 21, Spring Boot, PostgreSQL, Redis, RabbitMQ, Docker, Nginx, and React.
 
 ## Current status
