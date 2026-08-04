@@ -13,6 +13,8 @@ app:
   redirect-cache:
     enabled: false
     ttl: PT1H
+  expiration-cleanup:
+    enabled: false
   click-tracking:
     enabled: false
     exchange: url-shortener.clicks

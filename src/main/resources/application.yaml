@@ -70,6 +70,10 @@ app:
   redirect-cache:
     enabled: ${REDIRECT_CACHE_ENABLED:true}
     ttl: ${REDIRECT_CACHE_TTL:PT1H}
+  expiration-cleanup:
+    enabled: ${EXPIRATION_CLEANUP_ENABLED:true}
+    initial-delay: ${EXPIRATION_CLEANUP_INITIAL_DELAY:PT1M}
+    interval: ${EXPIRATION_CLEANUP_INTERVAL:PT5M}
   click-tracking:
     enabled: ${CLICK_TRACKING_ENABLED:true}
     exchange: url-shortener.clicks
