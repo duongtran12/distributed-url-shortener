@@ -3,6 +3,7 @@ import { ApiClientError } from '../auth/authApi'
 import type { UserProfile } from '../auth/types'
 import { getAnalyticsOverview } from '../analytics/analyticsApi'
 import { TrafficChart } from '../analytics/TrafficChart'
+import { UrlAnalyticsPanel } from '../analytics/UrlAnalyticsPanel'
 import type { AnalyticsOverview } from '../analytics/types'
 import { HealthBadge, type HealthState } from '../components/HealthBadge'
 import { CreateLinkForm } from '../links/CreateLinkForm'
@@ -30,6 +31,7 @@ export function DashboardHome({ user, health, onLogout }: DashboardHomeProps) {
 	const [analyticsLoading, setAnalyticsLoading] = useState(true)
 	const [analyticsError, setAnalyticsError] = useState('')
 	const [analyticsRefresh, setAnalyticsRefresh] = useState(0)
+	const [selectedAnalyticsLink, setSelectedAnalyticsLink] = useState<ShortUrl | null>(null)
 
   const loadPage = useCallback(async (page: number) => {
     setLoading(true)
@@ -184,7 +186,7 @@ export function DashboardHome({ user, health, onLogout }: DashboardHomeProps) {
             </div>
           ) : (
             <div className="links-list">
-              {links.content.map((link) => <LinkCard key={link.id} link={link} onUpdated={handleUpdated} onDeleted={handleDeleted} />)}
+			  {links.content.map((link) => <LinkCard key={link.id} link={link} onUpdated={handleUpdated} onDeleted={handleDeleted} onViewAnalytics={setSelectedAnalyticsLink} />)}
             </div>
           )}
 
@@ -195,7 +197,8 @@ export function DashboardHome({ user, health, onLogout }: DashboardHomeProps) {
               <button type="button" disabled={links.page + 1 >= links.totalPages || loading} onClick={() => void loadPage(links.page + 1)}>Next</button>
             </nav>
           )}
-        </section>
+		</section>
+		{selectedAnalyticsLink && <UrlAnalyticsPanel link={selectedAnalyticsLink} onClose={() => setSelectedAnalyticsLink(null)} />}
       </section>
     </main>
   )
