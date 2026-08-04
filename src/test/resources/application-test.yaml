@@ -23,3 +23,10 @@ app:
     dead-letter-routing-key: click.dead
   visitor-fingerprint:
     secret: test-visitor-fingerprint-secret-with-32-characters
+  rate-limit:
+    enabled: false
+    fail-open: true
+    window: PT1M
+    auth-requests: 10
+    redirect-requests: 60
+    api-requests: 120
