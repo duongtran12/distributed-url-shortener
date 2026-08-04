@@ -43,6 +43,7 @@ spring:
 
 server:
   port: ${SERVER_PORT:8080}
+  forward-headers-strategy: ${FORWARD_HEADERS_STRATEGY:NATIVE}
 
 logging:
   level:
@@ -77,3 +78,5 @@ app:
     dead-letter-exchange: url-shortener.clicks.dlx
     dead-letter-queue: url-shortener.clicks.dead
     dead-letter-routing-key: click.dead
+  visitor-fingerprint:
+    secret: ${VISITOR_HASH_SECRET:${app.jwt.secret}}

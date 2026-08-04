@@ -82,11 +82,13 @@ class ClickAnalyticsIntegrationTest {
 		String safariIphone = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) "
 				+ "Mobile/15E148 Version/17.0 Safari/604.1";
 		clickEventStore.record(ClickEvent.create(
-				"stats01", firstClick, chromeWindows, "https://google.com/search?q=one"));
+				"stats01", firstClick, chromeWindows,
+				"https://google.com/search?q=one", "visitor-one"));
 		clickEventStore.record(ClickEvent.create(
-				"stats01", firstClick.plusSeconds(60), chromeWindows, "https://google.com/other"));
+				"stats01", firstClick.plusSeconds(60), chromeWindows,
+				"https://google.com/other", "visitor-one"));
 		clickEventStore.record(ClickEvent.create(
-				"stats01", firstClick.plusSeconds(120), safariIphone, null));
+				"stats01", firstClick.plusSeconds(120), safariIphone, null, "visitor-two"));
 
 		mockMvc.perform(get("/api/v1/urls/{id}/analytics", shortUrl.getId())
 				.param("from", today.minusDays(2).toString())
@@ -95,7 +97,9 @@ class ClickAnalyticsIntegrationTest {
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.shortCode").value("stats01"))
 				.andExpect(jsonPath("$.lifetimeClicks").value(3))
+				.andExpect(jsonPath("$.lifetimeUniqueVisitors").value(2))
 				.andExpect(jsonPath("$.periodClicks").value(3))
+				.andExpect(jsonPath("$.periodUniqueVisitors").value(2))
 				.andExpect(jsonPath("$.dailyClicks.length()").value(3))
 				.andExpect(jsonPath("$.dailyClicks[0].clicks").value(0))
 				.andExpect(jsonPath("$.dailyClicks[1].clicks").value(0))

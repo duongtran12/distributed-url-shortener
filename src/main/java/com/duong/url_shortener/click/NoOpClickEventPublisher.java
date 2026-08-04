@@ -13,7 +13,12 @@ import org.springframework.stereotype.Component;
 public class NoOpClickEventPublisher implements ClickEventPublisher {
 
 	@Override
-	public void publish(String shortCode, Instant clickedAt, String userAgent, String referrer) {
+	public void publish(
+			String shortCode,
+			Instant clickedAt,
+			String userAgent,
+			String referrer,
+			String visitorHash) {
 		// Click tracking is intentionally disabled for this environment.
 	}
 }
