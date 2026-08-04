@@ -29,8 +29,8 @@ public class ClickEventStore {
 		int inserted = jdbcTemplate.update("""
 				INSERT INTO click_events (
 				    event_id, short_code, clicked_at, user_agent,
-				    referrer, browser, operating_system, device_type)
-				VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+				    referrer, browser, operating_system, device_type, visitor_hash)
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 				ON CONFLICT (event_id) DO NOTHING
 				""",
 				event.eventId(),
@@ -40,7 +40,8 @@ public class ClickEventStore {
 				metadata.referrer(),
 				metadata.browser(),
 				metadata.operatingSystem(),
-				metadata.deviceType().name());
+				metadata.deviceType().name(),
+				event.visitorHash());
 
 		if (inserted == 1) {
 			shortUrlRepository.incrementClickCount(event.shortCode());

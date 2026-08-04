@@ -14,7 +14,10 @@ import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(
 		controllers = ErrorHandlingTestController.class,
-		properties = "debug=false")
+		properties = {
+				"debug=false",
+				"app.visitor-fingerprint.secret=test-visitor-fingerprint-secret-with-32-characters"
+		})
 @AutoConfigureMockMvc(addFilters = false)
 @Import(GlobalExceptionHandler.class)
 class GlobalExceptionHandlerTest {

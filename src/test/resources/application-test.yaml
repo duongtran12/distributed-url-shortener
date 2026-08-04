@@ -21,3 +21,5 @@ app:
     dead-letter-exchange: url-shortener.clicks.dlx
     dead-letter-queue: url-shortener.clicks.dead
     dead-letter-routing-key: click.dead
+  visitor-fingerprint:
+    secret: test-visitor-fingerprint-secret-with-32-characters

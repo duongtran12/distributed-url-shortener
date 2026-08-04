@@ -4,5 +4,10 @@ import java.time.Instant;
 
 public interface ClickEventPublisher {
 
-	void publish(String shortCode, Instant clickedAt, String userAgent, String referrer);
+	void publish(
+			String shortCode,
+			Instant clickedAt,
+			String userAgent,
+			String referrer,
+			String visitorHash);
 }

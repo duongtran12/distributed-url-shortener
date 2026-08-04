@@ -8,14 +8,15 @@ public record ClickEvent(
 		String shortCode,
 		Instant clickedAt,
 		String userAgent,
-		String referrer) {
+		String referrer,
+		String visitorHash) {
 
 	public ClickEvent(UUID eventId, String shortCode, Instant clickedAt) {
-		this(eventId, shortCode, clickedAt, null, null);
+		this(eventId, shortCode, clickedAt, null, null, null);
 	}
 
 	public static ClickEvent create(String shortCode, Instant clickedAt) {
-		return create(shortCode, clickedAt, null, null);
+		return create(shortCode, clickedAt, null, null, null);
 	}
 
 	public static ClickEvent create(
@@ -23,6 +24,16 @@ public record ClickEvent(
 			Instant clickedAt,
 			String userAgent,
 			String referrer) {
-		return new ClickEvent(UUID.randomUUID(), shortCode, clickedAt, userAgent, referrer);
+		return create(shortCode, clickedAt, userAgent, referrer, null);
+	}
+
+	public static ClickEvent create(
+			String shortCode,
+			Instant clickedAt,
+			String userAgent,
+			String referrer,
+			String visitorHash) {
+		return new ClickEvent(
+				UUID.randomUUID(), shortCode, clickedAt, userAgent, referrer, visitorHash);
 	}
 }

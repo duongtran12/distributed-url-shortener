@@ -89,11 +89,15 @@ public class ClickAnalyticsService {
 				.map(entry -> new DailyClickCount(entry.getKey(), entry.getValue()))
 				.toList();
 		long periodClicks = dailyClicks.stream().mapToLong(DailyClickCount::clicks).sum();
+		long lifetimeUniqueVisitors = queryUniqueVisitors(shortUrl.getShortCode(), null, null);
+		long periodUniqueVisitors = 0;
 		List<CategoryClickCount> browsers = List.of();
 		List<CategoryClickCount> operatingSystems = List.of();
 		List<CategoryClickCount> devices = List.of();
 		List<CategoryClickCount> referrers = List.of();
 		if (effectiveStart.isBefore(endExclusive)) {
+			periodUniqueVisitors = queryUniqueVisitors(
+					shortUrl.getShortCode(), effectiveStart, endExclusive);
 			browsers = queryBreakdown(
 					"browser", shortUrl.getShortCode(), effectiveStart, endExclusive);
 			operatingSystems = queryBreakdown(
@@ -108,7 +112,9 @@ public class ClickAnalyticsService {
 				shortUrl.getId(),
 				shortUrl.getShortCode(),
 				shortUrl.getClickCount(),
+				lifetimeUniqueVisitors,
 				periodClicks,
+				periodUniqueVisitors,
 				from,
 				to,
 				dailyClicks,
@@ -116,6 +122,33 @@ public class ClickAnalyticsService {
 				operatingSystems,
 				devices,
 				referrers);
+	}
+
+	private long queryUniqueVisitors(
+			String shortCode,
+			Instant start,
+			Instant endExclusive) {
+		if (start == null || endExclusive == null) {
+			Long count = jdbcTemplate.queryForObject("""
+					SELECT COUNT(DISTINCT visitor_hash)
+					FROM click_events
+					WHERE short_code = ?
+					""", Long.class, shortCode);
+			return count == null ? 0 : count;
+		}
+
+		Long count = jdbcTemplate.queryForObject("""
+				SELECT COUNT(DISTINCT visitor_hash)
+				FROM click_events
+				WHERE short_code = ?
+				  AND clicked_at >= ?
+				  AND clicked_at < ?
+				""",
+				Long.class,
+				shortCode,
+				Timestamp.from(start),
+				Timestamp.from(endExclusive));
+		return count == null ? 0 : count;
 	}
 
 	private List<CategoryClickCount> queryBreakdown(
