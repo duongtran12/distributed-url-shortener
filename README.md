@@ -4,12 +4,13 @@ A portfolio project built incrementally with Java 21, Spring Boot, PostgreSQL, R
 
 ## Current status
 
-Phase 1 foundation is in progress. The current setup contains the Spring Boot application and a Dockerized PostgreSQL database. Product features are not implemented yet.
+The backend includes authentication, URL management, Redis caching and distributed rate limiting, RabbitMQ click tracking, and analytics APIs. The React dashboard is under active development.
 
 ## Prerequisites
 
 - Java 21
 - Docker Desktop with Docker Compose
+- Node.js 24+
 
 ## Local setup
 
@@ -42,6 +43,18 @@ Phase 1 foundation is in progress. The current setup contains the Spring Boot ap
    ```
 
 Stop local infrastructure with `docker compose down`. Add `--volumes` only when you intentionally want to delete local database data.
+
+## Frontend
+
+With the backend running on port `8080`, start the Vite development server:
+
+```powershell
+Set-Location frontend
+npm install
+npm run dev
+```
+
+Open `http://localhost:5173`. Vite proxies backend requests to `http://localhost:8080` during local development.
 
 ## Tests
 
