@@ -1,5 +1,6 @@
 package com.duong.url_shortener.shorturl;
 
+import java.time.Instant;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -26,4 +27,18 @@ public interface ShortUrlRepository extends JpaRepository<ShortUrl, Long> {
 			where shortUrl.shortCode = :shortCode
 			""")
 	int incrementClickCount(@Param("shortCode") String shortCode);
+
+	@Modifying(clearAutomatically = true, flushAutomatically = true)
+	@Query("""
+			update ShortUrl shortUrl
+			set shortUrl.status = :disabledStatus,
+				shortUrl.updatedAt = :now
+			where shortUrl.status = :activeStatus
+				and shortUrl.expiresAt is not null
+				and shortUrl.expiresAt <= :now
+			""")
+	int disableExpiredUrls(
+			@Param("now") Instant now,
+			@Param("activeStatus") ShortUrlStatus activeStatus,
+			@Param("disabledStatus") ShortUrlStatus disabledStatus);
 }

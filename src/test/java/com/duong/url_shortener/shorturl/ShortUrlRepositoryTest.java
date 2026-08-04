@@ -80,4 +80,52 @@ class ShortUrlRepositoryTest {
 				null)))
 				.isInstanceOf(DataIntegrityViolationException.class);
 	}
+
+	@Test
+	void shouldDisableOnlyActiveExpiredUrls() {
+		Instant createdAround = Instant.now().truncatedTo(ChronoUnit.MILLIS);
+		Instant expiresBeforeCleanup = createdAround.plus(1, ChronoUnit.MINUTES);
+		Instant cleanupTime = createdAround.plus(2, ChronoUnit.MINUTES);
+		ShortUrl expired = shortUrlRepository.save(ShortUrl.create(
+				owner,
+				"expired1",
+				"https://example.com/expired",
+				false,
+				expiresBeforeCleanup));
+		ShortUrl future = shortUrlRepository.save(ShortUrl.create(
+				owner,
+				"future01",
+				"https://example.com/future",
+				false,
+				cleanupTime.plus(1, ChronoUnit.DAYS)));
+		ShortUrl permanent = shortUrlRepository.save(ShortUrl.create(
+				owner,
+				"forever1",
+				"https://example.com/permanent",
+				false,
+				null));
+		ShortUrl blockedExpired = ShortUrl.create(
+				owner,
+				"blocked1",
+				"https://example.com/blocked",
+				false,
+				expiresBeforeCleanup);
+		blockedExpired.block();
+		shortUrlRepository.saveAndFlush(blockedExpired);
+
+		int updated = shortUrlRepository.disableExpiredUrls(
+				cleanupTime,
+				ShortUrlStatus.ACTIVE,
+				ShortUrlStatus.DISABLED);
+
+		assertThat(updated).isEqualTo(1);
+		assertThat(shortUrlRepository.findById(expired.getId()).orElseThrow().getStatus())
+				.isEqualTo(ShortUrlStatus.DISABLED);
+		assertThat(shortUrlRepository.findById(future.getId()).orElseThrow().getStatus())
+				.isEqualTo(ShortUrlStatus.ACTIVE);
+		assertThat(shortUrlRepository.findById(permanent.getId()).orElseThrow().getStatus())
+				.isEqualTo(ShortUrlStatus.ACTIVE);
+		assertThat(shortUrlRepository.findById(blockedExpired.getId()).orElseThrow().getStatus())
+				.isEqualTo(ShortUrlStatus.BLOCKED);
+	}
 }
