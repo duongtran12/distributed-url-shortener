@@ -23,11 +23,7 @@ public class ShortUrlExpirationJob {
 	private final ShortUrlRepository shortUrlRepository;
 	private final Clock clock;
 
-	public ShortUrlExpirationJob(ShortUrlRepository shortUrlRepository) {
-		this(shortUrlRepository, Clock.systemUTC());
-	}
-
-	ShortUrlExpirationJob(ShortUrlRepository shortUrlRepository, Clock clock) {
+	public ShortUrlExpirationJob(ShortUrlRepository shortUrlRepository, Clock clock) {
 		this.shortUrlRepository = shortUrlRepository;
 		this.clock = clock;
 	}
