@@ -99,6 +99,8 @@ Stop the stack with `docker compose down`. This preserves named volumes; adding 
 
 The Docker stack runs Prometheus at `http://localhost:9090`. It discovers and scrapes every backend replica through Docker DNS.
 
+Grafana is available at `http://localhost:3000`. Sign in with the admin credentials configured in `.env`, then open **Dashboards > URL Shortener > URL Shortener Overview**. The Prometheus datasource and dashboard are provisioned automatically.
+
 Useful custom metrics include:
 
 - `shortener_redirect_resolutions_total`, tagged by `source=cache|database`
