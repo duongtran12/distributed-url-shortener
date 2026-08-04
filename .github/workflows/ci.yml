@@ -78,6 +78,15 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Validate Docker Compose
+        env:
+          POSTGRES_DB: url_shortener
+          POSTGRES_USER: url_shortener
+          POSTGRES_PASSWORD: ci-postgres-password
+          JWT_SECRET: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+          GRAFANA_ADMIN_PASSWORD: ci-grafana-password
+        run: docker compose config --quiet
+
       - name: Build backend image
         run: docker build --tag url-shortener-backend:ci .
 
