@@ -4,16 +4,22 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.duong.url_shortener.ratelimit.RateLimitFilter;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(
 		controllers = ErrorHandlingTestController.class,
+		excludeFilters = @ComponentScan.Filter(
+				type = FilterType.ASSIGNABLE_TYPE,
+				classes = RateLimitFilter.class),
 		properties = {
 				"debug=false",
 				"app.visitor-fingerprint.secret=test-visitor-fingerprint-secret-with-32-characters"

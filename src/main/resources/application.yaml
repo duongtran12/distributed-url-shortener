@@ -80,3 +80,10 @@ app:
     dead-letter-routing-key: click.dead
   visitor-fingerprint:
     secret: ${VISITOR_HASH_SECRET:${app.jwt.secret}}
+  rate-limit:
+    enabled: ${RATE_LIMIT_ENABLED:true}
+    fail-open: ${RATE_LIMIT_FAIL_OPEN:true}
+    window: ${RATE_LIMIT_WINDOW:PT1M}
+    auth-requests: ${RATE_LIMIT_AUTH_REQUESTS:10}
+    redirect-requests: ${RATE_LIMIT_REDIRECT_REQUESTS:60}
+    api-requests: ${RATE_LIMIT_API_REQUESTS:120}
