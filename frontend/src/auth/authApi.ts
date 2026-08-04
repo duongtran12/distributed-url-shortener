@@ -23,7 +23,7 @@ export class ApiClientError extends Error {
   }
 }
 
-async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+export async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = getAccessToken()
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
@@ -50,7 +50,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 }
 
 export async function login(email: string, password: string): Promise<UserProfile> {
-  const result = await request<LoginResponse>('/api/v1/auth/login', {
+  const result = await apiRequest<LoginResponse>('/api/v1/auth/login', {
     method: 'POST',
     body: JSON.stringify({ email, password }),
   })
@@ -64,7 +64,7 @@ export async function login(email: string, password: string): Promise<UserProfil
 }
 
 export async function register(displayName: string, email: string, password: string): Promise<UserProfile> {
-  await request<UserProfile>('/api/v1/auth/register', {
+  await apiRequest<UserProfile>('/api/v1/auth/register', {
     method: 'POST',
     body: JSON.stringify({ displayName, email, password }),
   })
@@ -72,7 +72,7 @@ export async function register(displayName: string, email: string, password: str
 }
 
 export function getCurrentUser(): Promise<UserProfile> {
-  return request<UserProfile>('/api/v1/users/me')
+  return apiRequest<UserProfile>('/api/v1/users/me')
 }
 
 export function getAccessToken() {

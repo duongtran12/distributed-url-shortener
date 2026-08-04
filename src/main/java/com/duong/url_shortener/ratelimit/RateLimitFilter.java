@@ -100,7 +100,8 @@ public class RateLimitFilter extends OncePerRequestFilter {
 	private String identity(HttpServletRequest request) {
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 		if (authentication != null && authentication.getPrincipal() instanceof Jwt jwt) {
-			return "user:" + String.valueOf(jwt.getClaim("uid"));
+			Object userId = jwt.getClaim("uid");
+			return "user:" + String.valueOf(userId);
 		}
 		String visitorHash = visitorFingerprintService.hash(request.getRemoteAddr());
 		return "visitor:" + (visitorHash == null ? "unknown" : visitorHash);
