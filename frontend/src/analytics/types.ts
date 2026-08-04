@@ -22,3 +22,24 @@ export interface AnalyticsOverview {
   dailyClicks: DailyClickCount[]
   topUrls: TopUrlAnalytics[]
 }
+
+export interface CategoryClickCount {
+  category: string
+  clicks: number
+}
+
+export interface UrlAnalytics {
+  shortUrlId: number
+  shortCode: string
+  lifetimeClicks: number
+  lifetimeUniqueVisitors: number
+  periodClicks: number
+  periodUniqueVisitors: number
+  from: string
+  to: string
+  dailyClicks: DailyClickCount[]
+  browsers: CategoryClickCount[]
+  operatingSystems: CategoryClickCount[]
+  devices: CategoryClickCount[]
+  referrers: CategoryClickCount[]
+}

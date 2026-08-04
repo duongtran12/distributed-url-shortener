@@ -7,9 +7,10 @@ interface LinkCardProps {
   link: ShortUrl
   onUpdated: (link: ShortUrl) => void
   onDeleted: (id: number) => void
+  onViewAnalytics: (link: ShortUrl) => void
 }
 
-export function LinkCard({ link, onUpdated, onDeleted }: LinkCardProps) {
+export function LinkCard({ link, onUpdated, onDeleted, onViewAnalytics }: LinkCardProps) {
 	const [working, setWorking] = useState(false)
 	const [copied, setCopied] = useState(false)
 	const [error, setError] = useState('')
@@ -73,6 +74,7 @@ export function LinkCard({ link, onUpdated, onDeleted }: LinkCardProps) {
       </div>
       <div className="click-metric"><strong>{link.clickCount.toLocaleString()}</strong><span>clicks</span></div>
       <div className="link-actions">
+        <button type="button" onClick={() => onViewAnalytics(link)}>Analytics</button>
         <button type="button" onClick={copyLink}>{copied ? 'Copied' : 'Copy'}</button>
         {link.status !== 'BLOCKED' && !expired && <button type="button" onClick={toggleStatus} disabled={working}>{link.status === 'ACTIVE' ? 'Disable' : 'Enable'}</button>}
         <button className="danger-action" type="button" onClick={remove} disabled={working}>Delete</button>
