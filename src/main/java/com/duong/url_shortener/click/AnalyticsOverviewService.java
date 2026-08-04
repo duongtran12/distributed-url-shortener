@@ -5,7 +5,9 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.duong.url_shortener.common.exception.ApiException;
 import com.duong.url_shortener.user.User;
@@ -80,6 +82,31 @@ public class AnalyticsOverviewService {
 				Timestamp.from(start),
 				Timestamp.from(endExclusive));
 
+		Map<LocalDate, Long> countsByDate = new LinkedHashMap<>();
+		from.datesUntil(to.plusDays(1)).forEach(date -> countsByDate.put(date, 0L));
+		jdbcTemplate.query("""
+				SELECT (event.clicked_at AT TIME ZONE 'UTC')::date AS click_date,
+				       COUNT(*) AS clicks
+				FROM click_events event
+				JOIN short_urls url ON url.short_code = event.short_code
+				WHERE url.user_id = ?
+				  AND event.clicked_at >= ?
+				  AND event.clicked_at < ?
+				GROUP BY click_date
+				ORDER BY click_date
+				""",
+				resultSet -> {
+					countsByDate.put(
+							resultSet.getObject("click_date", LocalDate.class),
+							resultSet.getLong("clicks"));
+				},
+				userId,
+				Timestamp.from(start),
+				Timestamp.from(endExclusive));
+		List<DailyClickCount> dailyClicks = countsByDate.entrySet().stream()
+				.map(entry -> new DailyClickCount(entry.getKey(), entry.getValue()))
+				.toList();
+
 		List<TopUrlAnalytics> topUrls = jdbcTemplate.query("""
 				SELECT url.id,
 				       url.short_code,
@@ -114,6 +141,7 @@ public class AnalyticsOverviewService {
 				periodTotals.uniqueVisitors(),
 				from,
 				to,
+				dailyClicks,
 				topUrls);
 	}
 
