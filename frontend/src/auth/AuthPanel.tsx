@@ -6,11 +6,12 @@ type Mode = 'login' | 'register'
 
 interface AuthPanelProps {
   initialMode: Mode
+  notice?: string
   onAuthenticated: (user: UserProfile) => void
   onClose: () => void
 }
 
-export function AuthPanel({ initialMode, onAuthenticated, onClose }: AuthPanelProps) {
+export function AuthPanel({ initialMode, notice, onAuthenticated, onClose }: AuthPanelProps) {
   const [mode, setMode] = useState<Mode>(initialMode)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
@@ -57,6 +58,7 @@ export function AuthPanel({ initialMode, onAuthenticated, onClose }: AuthPanelPr
         <p className="auth-intro">
           {mode === 'login' ? 'Sign in to manage links and inspect live traffic.' : 'Create an account to launch your first tracked short link.'}
         </p>
+        {notice && <div className="auth-success" role="status">{notice}</div>}
 
         <form className="auth-form" onSubmit={handleSubmit}>
           {mode === 'register' && (

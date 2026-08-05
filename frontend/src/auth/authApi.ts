@@ -75,6 +75,13 @@ export function getCurrentUser(): Promise<UserProfile> {
   return apiRequest<UserProfile>('/api/v1/users/me')
 }
 
+export function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  return apiRequest<void>('/api/v1/users/me/password', {
+    method: 'PATCH',
+    body: JSON.stringify({ currentPassword, newPassword }),
+  })
+}
+
 export function getAccessToken() {
   return sessionStorage.getItem(TOKEN_KEY)
 }
