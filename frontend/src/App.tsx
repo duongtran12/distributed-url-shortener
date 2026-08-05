@@ -20,6 +20,7 @@ function ArrowIcon() {
 function App() {
   const [health, setHealth] = useState<HealthState>('checking')
   const [authView, setAuthView] = useState<AuthView>(null)
+  const [authNotice, setAuthNotice] = useState('')
   const [user, setUser] = useState<UserProfile | null>(null)
   const [sessionLoading, setSessionLoading] = useState(() => Boolean(getAccessToken()))
 
@@ -52,11 +53,29 @@ function App() {
   function handleAuthenticated(profile: UserProfile) {
     setUser(profile)
     setAuthView(null)
+    setAuthNotice('')
   }
 
   function handleLogout() {
     clearAccessToken()
     setUser(null)
+  }
+
+  function handlePasswordChanged() {
+    clearAccessToken()
+    setUser(null)
+    setAuthNotice('Password updated. Sign in again with your new password.')
+    setAuthView('login')
+  }
+
+  function openAuth(view: Exclude<AuthView, null>) {
+    setAuthNotice('')
+    setAuthView(view)
+  }
+
+  function closeAuth() {
+    setAuthNotice('')
+    setAuthView(null)
   }
 
   if (sessionLoading) {
@@ -69,7 +88,7 @@ function App() {
   }
 
   if (user) {
-    return <DashboardHome user={user} health={health} onLogout={handleLogout} />
+    return <DashboardHome user={user} health={health} onLogout={handleLogout} onPasswordChanged={handlePasswordChanged} />
   }
 
   return (
@@ -80,10 +99,10 @@ function App() {
           <span>shortwave</span>
         </a>
         <div className="nav-actions">
-          <button className="text-button" type="button" onClick={() => setAuthView('login')}>
+          <button className="text-button" type="button" onClick={() => openAuth('login')}>
             Sign in
           </button>
-          <button className="primary-button primary-button--small" type="button" onClick={() => setAuthView('register')}>
+          <button className="primary-button primary-button--small" type="button" onClick={() => openAuth('register')}>
             Get started <ArrowIcon />
           </button>
         </div>
@@ -98,10 +117,10 @@ function App() {
             useful insight from one focused workspace.
           </p>
           <div className="hero-actions">
-            <button className="primary-button" type="button" onClick={() => setAuthView('register')}>
+            <button className="primary-button" type="button" onClick={() => openAuth('register')}>
               Create an account <ArrowIcon />
             </button>
-            <button className="secondary-button" type="button" onClick={() => setAuthView('login')}>Sign in to your workspace</button>
+            <button className="secondary-button" type="button" onClick={() => openAuth('login')}>Sign in to your workspace</button>
           </div>
           <div className="hero-assurance" aria-label="Platform capabilities">
             <span>Custom aliases</span><span>Private analytics</span><span>Distributed infrastructure</span>
@@ -138,8 +157,9 @@ function App() {
       {authView && (
         <AuthPanel
           initialMode={authView}
+          notice={authNotice}
           onAuthenticated={handleAuthenticated}
-          onClose={() => setAuthView(null)}
+          onClose={closeAuth}
         />
       )}
     </main>

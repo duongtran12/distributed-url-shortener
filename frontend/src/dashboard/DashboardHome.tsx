@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ApiClientError } from '../auth/authApi'
+import { AccountSettingsPanel } from '../auth/AccountSettingsPanel'
 import type { UserProfile } from '../auth/types'
 import { getAnalyticsOverview } from '../analytics/analyticsApi'
 import { TrafficChart } from '../analytics/TrafficChart'
@@ -15,13 +16,14 @@ interface DashboardHomeProps {
   user: UserProfile
   health: HealthState
   onLogout: () => void
+  onPasswordChanged: () => void
 }
 
 const EMPTY_PAGE: ShortUrlPage = {
   content: [], page: 0, size: 20, totalElements: 0, totalPages: 0,
 }
 
-export function DashboardHome({ user, health, onLogout }: DashboardHomeProps) {
+export function DashboardHome({ user, health, onLogout, onPasswordChanged }: DashboardHomeProps) {
   const [links, setLinks] = useState<ShortUrlPage>(EMPTY_PAGE)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -32,6 +34,7 @@ export function DashboardHome({ user, health, onLogout }: DashboardHomeProps) {
 	const [analyticsError, setAnalyticsError] = useState('')
 	const [analyticsRefresh, setAnalyticsRefresh] = useState(0)
 	const [selectedAnalyticsLink, setSelectedAnalyticsLink] = useState<ShortUrl | null>(null)
+	const [showAccountSettings, setShowAccountSettings] = useState(false)
 
   const loadPage = useCallback(async (page: number) => {
     setLoading(true)
@@ -127,7 +130,10 @@ export function DashboardHome({ user, health, onLogout }: DashboardHomeProps) {
           <a href="#analytics">Traffic</a>
           <a href="#links">Short links</a>
         </nav>
-        <button className="logout-button" type="button" onClick={onLogout}>Sign out</button>
+        <div className="sidebar-account-actions">
+          <button className="settings-button" type="button" onClick={() => setShowAccountSettings(true)}>Account settings</button>
+          <button className="logout-button" type="button" onClick={onLogout}>Sign out</button>
+        </div>
       </aside>
 
       <section className="dashboard-content">
@@ -199,6 +205,7 @@ export function DashboardHome({ user, health, onLogout }: DashboardHomeProps) {
           )}
 		</section>
 		{selectedAnalyticsLink && <UrlAnalyticsPanel link={selectedAnalyticsLink} onClose={() => setSelectedAnalyticsLink(null)} />}
+		{showAccountSettings && <AccountSettingsPanel user={user} onClose={() => setShowAccountSettings(false)} onPasswordChanged={onPasswordChanged} />}
       </section>
     </main>
   )
