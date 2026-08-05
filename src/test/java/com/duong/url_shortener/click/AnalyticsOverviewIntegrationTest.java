@@ -1,6 +1,8 @@
 package com.duong.url_shortener.click;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -20,6 +22,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -119,6 +122,37 @@ class AnalyticsOverviewIntegrationTest {
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken))
 				.andExpect(status().isBadRequest())
 				.andExpect(jsonPath("$.code").value("INVALID_ANALYTICS_RANGE"));
+	}
+
+	@Test
+	void shouldExportOwnerDailyAnalyticsAsCsv() throws Exception {
+		shortUrlRepository.saveAndFlush(
+				ShortUrl.create(owner, "export01", "https://example.com/export", false, null));
+		User anotherOwner = userRepository.saveAndFlush(
+				User.create("export-other@example.com", "encoded-password", "Other Owner"));
+		shortUrlRepository.saveAndFlush(
+				ShortUrl.create(anotherOwner, "foreign2", "https://example.com/foreign", false, null));
+
+		Instant clickTime = Instant.now().minusSeconds(5);
+		record("export01", clickTime, "visitor-one");
+		record("export01", clickTime.plusSeconds(1), "visitor-two");
+		record("foreign2", clickTime.plusSeconds(2), "foreign-visitor");
+
+		LocalDate today = LocalDate.now(ZoneOffset.UTC);
+		String expectedCsv = "\uFEFFdate,clicks\r\n%s,0\r\n%s,2\r\n"
+				.formatted(today.minusDays(1), today);
+
+		mockMvc.perform(get("/api/v1/analytics/overview/export")
+				.param("from", today.minusDays(1).toString())
+				.param("to", today.toString())
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken))
+				.andExpect(status().isOk())
+				.andExpect(content().contentTypeCompatibleWith(MediaType.parseMediaType("text/csv")))
+				.andExpect(header().string(
+						HttpHeaders.CONTENT_DISPOSITION,
+						"attachment; filename=\"shortwave-analytics-%s-to-%s.csv\""
+								.formatted(today.minusDays(1), today)))
+				.andExpect(content().string(expectedCsv));
 	}
 
 	private void record(String shortCode, Instant clickedAt, String visitorHash) {

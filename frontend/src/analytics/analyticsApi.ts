@@ -1,4 +1,4 @@
-import { apiRequest } from '../auth/authApi'
+import { apiDownload, apiRequest } from '../auth/authApi'
 import type { AnalyticsOverview, UrlAnalytics } from './types'
 
 function utcDate(daysAgo: number) {
@@ -19,4 +19,11 @@ export function getUrlAnalytics(shortUrlId: number, days: number) {
   return apiRequest<UrlAnalytics>(
     `/api/v1/urls/${shortUrlId}/analytics?from=${from}&to=${to}`,
   )
+}
+
+export function getAnalyticsCsv(days: number) {
+  const from = utcDate(days - 1)
+  const to = utcDate(0)
+  return apiDownload(`/api/v1/analytics/overview/export?from=${from}&to=${to}`)
+    .then((blob) => ({ blob, filename: `shortwave-analytics-${from}-to-${to}.csv` }))
 }
