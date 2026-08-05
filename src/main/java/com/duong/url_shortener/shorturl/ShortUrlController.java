@@ -3,6 +3,7 @@ package com.duong.url_shortener.shorturl;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -42,8 +43,10 @@ public class ShortUrlController {
 	public ShortUrlPageResponse findAll(
 			@AuthenticationPrincipal Jwt jwt,
 			@RequestParam(defaultValue = "0") @Min(0) int page,
-			@RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
-		return shortUrlService.findAllOwnedBy(jwt.getClaim("uid"), page, size);
+			@RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
+			@RequestParam(required = false) @Size(max = 200) String query,
+			@RequestParam(required = false) ShortUrlStatus status) {
+		return shortUrlService.findAllOwnedBy(jwt.getClaim("uid"), page, size, query, status);
 	}
 
 	@GetMapping("/{id}")

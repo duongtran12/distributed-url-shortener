@@ -1,8 +1,16 @@
 import { apiRequest } from '../auth/authApi'
-import type { CreateShortUrlInput, ShortUrl, ShortUrlPage, UpdateShortUrlInput } from './types'
+import type { CreateShortUrlInput, ShortUrl, ShortUrlPage, ShortUrlStatus, UpdateShortUrlInput } from './types'
 
-export function getShortUrls(page = 0, size = 20) {
-  return apiRequest<ShortUrlPage>(`/api/v1/urls?page=${page}&size=${size}`)
+export interface ShortUrlFilters {
+	query?: string
+	status?: ShortUrlStatus
+}
+
+export function getShortUrls(page = 0, size = 20, filters: ShortUrlFilters = {}) {
+	const params = new URLSearchParams({ page: String(page), size: String(size) })
+	if (filters.query) params.set('query', filters.query)
+	if (filters.status) params.set('status', filters.status)
+	return apiRequest<ShortUrlPage>(`/api/v1/urls?${params.toString()}`)
 }
 
 export function createShortUrl(input: CreateShortUrlInput) {

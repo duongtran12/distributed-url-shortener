@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { ApiClientError } from '../auth/authApi'
 import { AccountSettingsPanel } from '../auth/AccountSettingsPanel'
 import type { UserProfile } from '../auth/types'
@@ -10,7 +10,7 @@ import { HealthBadge, type HealthState } from '../components/HealthBadge'
 import { CreateLinkForm } from '../links/CreateLinkForm'
 import { LinkCard } from '../links/LinkCard'
 import { getShortUrls } from '../links/linkApi'
-import type { ShortUrl, ShortUrlPage } from '../links/types'
+import type { ShortUrl, ShortUrlPage, ShortUrlStatus } from '../links/types'
 
 interface DashboardHomeProps {
   user: UserProfile
@@ -35,29 +35,38 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged }: Das
 	const [analyticsRefresh, setAnalyticsRefresh] = useState(0)
 	const [selectedAnalyticsLink, setSelectedAnalyticsLink] = useState<ShortUrl | null>(null)
 	const [showAccountSettings, setShowAccountSettings] = useState(false)
+	const [searchInput, setSearchInput] = useState('')
+	const [searchQuery, setSearchQuery] = useState('')
+	const [statusFilter, setStatusFilter] = useState<ShortUrlStatus | ''>('')
 
   const loadPage = useCallback(async (page: number) => {
     setLoading(true)
     setError('')
     try {
-      setLinks(await getShortUrls(page))
+      setLinks(await getShortUrls(page, 20, {
+		query: searchQuery || undefined,
+		status: statusFilter || undefined,
+	  }))
     } catch (caught: unknown) {
       setError(caught instanceof ApiClientError ? caught.message : 'Could not load your links.')
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [searchQuery, statusFilter])
 
 	useEffect(() => {
-    let active = true
-    getShortUrls(0)
-      .then((page) => { if (active) setLinks(page) })
-      .catch((caught: unknown) => {
-        if (active) setError(caught instanceof ApiClientError ? caught.message : 'Could not load your links.')
-      })
-      .finally(() => { if (active) setLoading(false) })
-    return () => { active = false }
-	}, [])
+		let active = true
+		getShortUrls(0, 20, {
+			query: searchQuery || undefined,
+			status: statusFilter || undefined,
+		})
+			.then((page) => { if (active) setLinks(page) })
+			.catch((caught: unknown) => {
+				if (active) setError(caught instanceof ApiClientError ? caught.message : 'Could not load your links.')
+			})
+			.finally(() => { if (active) setLoading(false) })
+		return () => { active = false }
+	}, [searchQuery, statusFilter])
 
 	useEffect(() => {
 		let active = true
@@ -79,33 +88,51 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged }: Das
     [links.content],
   )
 
-	function handleCreated(created: ShortUrl) {
+	function handleCreated() {
     setShowCreate(false)
-    setLinks((current) => ({
-      ...current,
-      content: [created, ...current.content].slice(0, current.size),
-      totalElements: current.totalElements + 1,
-      totalPages: Math.ceil((current.totalElements + 1) / current.size),
-		}))
+		void loadPage(0)
 		refreshAnalytics()
   }
 
-	function handleUpdated(updated: ShortUrl) {
-    setLinks((current) => ({
-      ...current,
-      content: current.content.map((link) => link.id === updated.id ? updated : link),
-		}))
+	function handleUpdated() {
+		void loadPage(links.page)
 		refreshAnalytics()
   }
 
-	function handleDeleted(id: number) {
-    setLinks((current) => ({
-      ...current,
-      content: current.content.filter((link) => link.id !== id),
-      totalElements: Math.max(0, current.totalElements - 1),
-      totalPages: Math.ceil(Math.max(0, current.totalElements - 1) / current.size),
-		}))
+	function handleDeleted() {
+		const targetPage = links.content.length === 1 && links.page > 0 ? links.page - 1 : links.page
+		void loadPage(targetPage)
 		refreshAnalytics()
+	}
+
+	function handleSearch(event: FormEvent<HTMLFormElement>) {
+		event.preventDefault()
+		const nextQuery = searchInput.trim()
+		if (nextQuery === searchQuery) {
+			void loadPage(0)
+			return
+		}
+		setLoading(true)
+		setError('')
+		setSearchQuery(nextQuery)
+	}
+
+	function changeStatusFilter(status: ShortUrlStatus | '') {
+		setLoading(true)
+		setError('')
+		setStatusFilter(status)
+	}
+
+	function clearFilters() {
+		const alreadyClear = !searchInput && !searchQuery && !statusFilter
+		if (!alreadyClear) {
+			setLoading(true)
+			setError('')
+		}
+		setSearchInput('')
+		setSearchQuery('')
+		setStatusFilter('')
+		if (alreadyClear) void loadPage(0)
 	}
 
 	function refreshAnalytics() {
@@ -179,6 +206,23 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged }: Das
           </div>
 
           {showCreate && <CreateLinkForm onCreated={handleCreated} onCancel={() => setShowCreate(false)} />}
+          <form className="link-filters" onSubmit={handleSearch}>
+			<label className="link-search">
+			  <span>Search routes</span>
+			  <input value={searchInput} onChange={(event) => setSearchInput(event.target.value)} maxLength={200} placeholder="Short code or destination URL" />
+			</label>
+			<button className="filter-submit" type="submit" disabled={loading}>Search</button>
+			<label className="status-filter">
+			  <span>Status</span>
+			  <select value={statusFilter} onChange={(event) => changeStatusFilter(event.target.value as ShortUrlStatus | '')}>
+				<option value="">All statuses</option>
+				<option value="ACTIVE">Active</option>
+				<option value="DISABLED">Disabled</option>
+				<option value="BLOCKED">Blocked</option>
+			  </select>
+			</label>
+			{(searchQuery || statusFilter) && <button className="clear-filters" type="button" onClick={clearFilters}>Clear filters</button>}
+		  </form>
           {error && <div className="auth-error links-load-error" role="alert">{error} <button type="button" onClick={() => void loadPage(links.page)}>Try again</button></div>}
 
           {loading ? (
@@ -186,9 +230,11 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged }: Das
           ) : links.content.length === 0 ? (
             <div className="dashboard-empty">
               <span className="capability-index">EMPTY / 00</span>
-              <h2>No links yet.</h2>
-              <p>Create your first short URL. Click events and analytics will appear here automatically.</p>
-              <button className="primary-button" type="button" onClick={() => setShowCreate(true)}>Create a short link <span>-&gt;</span></button>
+              <h2>{searchQuery || statusFilter ? 'No matching links.' : 'No links yet.'}</h2>
+              <p>{searchQuery || statusFilter ? 'Try a different search term or status.' : 'Create your first short URL. Click events and analytics will appear here automatically.'}</p>
+              {searchQuery || statusFilter
+				? <button className="primary-button" type="button" onClick={clearFilters}>Clear filters <span>-&gt;</span></button>
+				: <button className="primary-button" type="button" onClick={() => setShowCreate(true)}>Create a short link <span>-&gt;</span></button>}
             </div>
           ) : (
             <div className="links-list">

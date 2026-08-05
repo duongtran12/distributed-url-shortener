@@ -1,6 +1,7 @@
 package com.duong.url_shortener.shorturl;
 
 import java.time.Instant;
+import java.util.Locale;
 
 import com.duong.url_shortener.common.exception.ApiException;
 import com.duong.url_shortener.user.User;
@@ -8,6 +9,7 @@ import com.duong.url_shortener.user.UserRepository;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -54,15 +56,27 @@ public class ShortUrlService {
 	}
 
 	@Transactional(readOnly = true)
-	public ShortUrlPageResponse findAllOwnedBy(Long userId, int page, int size) {
+	public ShortUrlPageResponse findAllOwnedBy(
+			Long userId,
+			int page,
+			int size,
+			String query,
+			ShortUrlStatus status) {
 		findActiveUser(userId);
 		PageRequest pageRequest = PageRequest.of(
 				page,
 				size,
 				Sort.by(Sort.Direction.DESC, "createdAt"));
-		return ShortUrlPageResponse.from(
-				shortUrlRepository.findAllByOwnerId(userId, pageRequest),
-				properties.baseUrl());
+		Specification<ShortUrl> filters = ownedBy(userId);
+		String normalizedQuery = normalizeSearchQuery(query);
+		if (normalizedQuery != null) {
+			filters = filters.and(matchesSearchQuery(normalizedQuery));
+		}
+		if (status != null) {
+			filters = filters.and(hasStatus(status));
+		}
+
+		return ShortUrlPageResponse.from(shortUrlRepository.findAll(filters, pageRequest), properties.baseUrl());
 	}
 
 	@Transactional(readOnly = true)
@@ -184,5 +198,34 @@ public class ShortUrlService {
 					"The user account is disabled");
 		}
 		return user;
+	}
+
+	private Specification<ShortUrl> ownedBy(Long userId) {
+		return (root, criteriaQuery, criteriaBuilder) ->
+				criteriaBuilder.equal(root.get("owner").get("id"), userId);
+	}
+
+	private Specification<ShortUrl> matchesSearchQuery(String query) {
+		String pattern = "%" + escapeLikePattern(query) + "%";
+		return (root, criteriaQuery, criteriaBuilder) -> criteriaBuilder.or(
+				criteriaBuilder.like(criteriaBuilder.lower(root.get("shortCode")), pattern, '\\'),
+				criteriaBuilder.like(criteriaBuilder.lower(root.get("originalUrl")), pattern, '\\'));
+	}
+
+	private Specification<ShortUrl> hasStatus(ShortUrlStatus status) {
+		return (root, criteriaQuery, criteriaBuilder) -> criteriaBuilder.equal(root.get("status"), status);
+	}
+
+	private String normalizeSearchQuery(String query) {
+		if (query == null || query.isBlank()) {
+			return null;
+		}
+		return query.trim().toLowerCase(Locale.ROOT);
+	}
+
+	private String escapeLikePattern(String query) {
+		return query.replace("\\", "\\\\")
+				.replace("%", "\\%")
+				.replace("_", "\\_");
 	}
 }
