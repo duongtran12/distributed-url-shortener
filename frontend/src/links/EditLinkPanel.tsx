@@ -1,4 +1,5 @@
-import { type FormEvent, useState } from 'react'
+import { type FormEvent, useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { ApiClientError } from '../auth/authApi'
 import { updateShortUrl } from './linkApi'
 import type { ShortUrl } from './types'
@@ -20,6 +21,21 @@ export function EditLinkPanel({ link, onClose, onUpdated }: EditLinkPanelProps) 
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') onClose()
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [onClose])
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -49,7 +65,7 @@ export function EditLinkPanel({ link, onClose, onUpdated }: EditLinkPanelProps) 
     }
   }
 
-  return (
+  return createPortal(
     <div className="detail-backdrop edit-link-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
       <section className="edit-link-panel" role="dialog" aria-modal="true" aria-labelledby="edit-link-title">
         <header className="edit-link-header">
@@ -59,12 +75,13 @@ export function EditLinkPanel({ link, onClose, onUpdated }: EditLinkPanelProps) 
 
         <form className="edit-link-form" onSubmit={handleSubmit}>
           <label>Destination URL<input name="originalUrl" type="url" defaultValue={link.originalUrl} maxLength={2048} required />{fieldErrors.originalUrl && <small>{fieldErrors.originalUrl}</small>}</label>
-          <label>Expiration <span>Optional — leave empty for no expiration</span><input name="expiresAt" type="datetime-local" defaultValue={toLocalDateTime(link.expiresAt)} />{fieldErrors.expiresAt && <small>{fieldErrors.expiresAt}</small>}</label>
+          <label>Expiration <span>Optional - leave empty for no expiration</span><input name="expiresAt" type="datetime-local" defaultValue={toLocalDateTime(link.expiresAt)} />{fieldErrors.expiresAt && <small>{fieldErrors.expiresAt}</small>}</label>
           {link.status !== 'ACTIVE' && <div className="edit-link-note">Saving does not reactivate this link. Enable it separately after updating the route.</div>}
           {error && <div className="auth-error" role="alert">{error}</div>}
           <div className="form-actions"><button className="text-button" type="button" onClick={onClose}>Cancel</button><button className="primary-button" type="submit" disabled={submitting}>{submitting ? 'Saving...' : 'Save changes'}</button></div>
         </form>
       </section>
-    </div>
+    </div>,
+    document.body,
   )
 }

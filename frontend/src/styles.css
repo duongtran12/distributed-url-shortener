@@ -228,7 +228,7 @@ h1 em { color: #65e7ae; font-style: normal; font-weight: 700; }
 .settings-form input:focus { border-color: #55e6a8; box-shadow: 0 0 0 3px rgba(85,230,168,.08); }
 .settings-form small { color: #ff907d; text-transform: none; letter-spacing: 0; }
 
-.edit-link-backdrop { place-items: center; padding: 24px; }
+.edit-link-backdrop { z-index: 50; place-items: center; padding: 24px; }
 .edit-link-panel { width: min(650px, 100%); max-height: calc(100vh - 48px); overflow-y: auto; background: #091813; border: 1px solid #315044; border-radius: 10px; box-shadow: 0 35px 100px rgba(0,0,0,.55); }
 .edit-link-header { display: flex; justify-content: space-between; align-items: start; gap: 28px; padding: 30px 32px 27px; border-bottom: 1px solid #284138; }
 .edit-link-header h2 { margin: 10px 0 7px; color: #dcebe4; font-size: 27px; letter-spacing: -.045em; }
