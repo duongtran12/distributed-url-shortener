@@ -253,6 +253,16 @@ h1 em { color: #65e7ae; font-style: normal; font-weight: 700; }
 .edit-link-form input:focus { border-color: #55e6a8; box-shadow: 0 0 0 3px rgba(85,230,168,.08); }
 .edit-link-form small { color: #ff907d; text-transform: none; letter-spacing: 0; }
 .edit-link-note { padding: 11px 13px; color: #dbc28f; background: rgba(219,194,143,.06); border-left: 2px solid #cda85f; font-size: 12px; line-height: 1.55; }
+.qr-code-backdrop { z-index: 50; place-items: center; padding: 24px; }
+.qr-code-panel { width: min(470px, 100%); max-height: calc(100vh - 48px); overflow-y: auto; background: #091813; border: 1px solid #315044; border-radius: 10px; box-shadow: 0 35px 100px rgba(0,0,0,.55); }
+.qr-code-header { display: flex; justify-content: space-between; gap: 24px; padding: 27px 30px 23px; border-bottom: 1px solid #284138; }
+.qr-code-header h2 { margin: 9px 0 5px; font-size: 27px; }
+.qr-code-header p:last-child { margin: 0; color: #71877d; font-size: 12px; }
+.qr-code-body { display: grid; justify-items: center; gap: 20px; padding: 30px; }
+.qr-code-body img { width: min(300px, 100%); aspect-ratio: 1; padding: 12px; background: #fff; border-radius: 7px; }
+.qr-code-body code { max-width: 100%; overflow: hidden; color: #82a394; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
+.qr-code-loading { min-height: 280px; display: flex; align-items: center; gap: 10px; color: #71877d; font: 10px 'DM Mono', monospace; text-transform: uppercase; }
+.qr-download { text-decoration: none; }
 
 @media (max-width: 900px) {
   .topbar .text-button { display: none; }
@@ -286,6 +296,8 @@ h1 em { color: #65e7ae; font-style: normal; font-weight: 700; }
   .profile-details > div:last-child { border-bottom: 0; }
   .edit-link-backdrop { padding: 0; }
   .edit-link-panel { width: 100%; max-height: 100vh; min-height: 100vh; border: 0; border-radius: 0; }
+  .qr-code-backdrop { padding: 0; }
+  .qr-code-panel { width: 100%; min-height: 100vh; max-height: 100vh; border: 0; border-radius: 0; }
   .edit-link-header, .edit-link-form { padding-left: 22px; padding-right: 22px; }
   .dashboard-content { width: min(100% - 28px, 1050px); padding-top: 36px; }
   .dashboard-header { display: grid; }

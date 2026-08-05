@@ -4,10 +4,20 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.io.ByteArrayInputStream;
+
+import javax.imageio.ImageIO;
+
+import com.google.zxing.BinaryBitmap;
+import com.google.zxing.MultiFormatReader;
+import com.google.zxing.client.j2se.BufferedImageLuminanceSource;
+import com.google.zxing.common.HybridBinarizer;
 import com.duong.url_shortener.security.JwtTokenService;
 import com.duong.url_shortener.user.User;
 import com.duong.url_shortener.user.UserRepository;
@@ -46,6 +56,9 @@ class ShortUrlManagementIntegrationTest {
 
 	@Autowired
 	private JwtTokenService jwtTokenService;
+
+	@Autowired
+	private ShortUrlProperties shortUrlProperties;
 
 	private User owner;
 	private User otherUser;
@@ -143,6 +156,36 @@ class ShortUrlManagementIntegrationTest {
 				.andExpect(jsonPath("$.id").value(shortUrl.getId()))
 				.andExpect(jsonPath("$.shortCode").value("details"))
 				.andExpect(jsonPath("$.originalUrl").value("https://example.com/details"));
+	}
+
+	@Test
+	void shouldGenerateQrCodeForOwnedUrlAndHideForeignUrl() throws Exception {
+		ShortUrl ownedUrl = shortUrlRepository.saveAndFlush(
+				ShortUrl.create(owner, "qrtest01", "https://example.com/qr", false, null));
+		ShortUrl foreignUrl = shortUrlRepository.saveAndFlush(
+				ShortUrl.create(otherUser, "qrforeign", "https://example.com/private", false, null));
+
+		byte[] png = mockMvc.perform(get("/api/v1/urls/{id}/qr", ownedUrl.getId())
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken))
+				.andExpect(status().isOk())
+				.andExpect(content().contentType(MediaType.IMAGE_PNG))
+				.andExpect(header().string(
+						HttpHeaders.CONTENT_DISPOSITION,
+						"inline; filename=\"qrtest01-qr.png\""))
+				.andReturn()
+				.getResponse()
+				.getContentAsByteArray();
+
+		var image = ImageIO.read(new ByteArrayInputStream(png));
+		var bitmap = new BinaryBitmap(new HybridBinarizer(new BufferedImageLuminanceSource(image)));
+		String decodedUrl = new MultiFormatReader().decode(bitmap).getText();
+		String baseUrl = shortUrlProperties.baseUrl().replaceAll("/$", "");
+		assertEquals(baseUrl + "/qrtest01", decodedUrl);
+
+		mockMvc.perform(get("/api/v1/urls/{id}/qr", foreignUrl.getId())
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken))
+				.andExpect(status().isNotFound())
+				.andExpect(jsonPath("$.code").value("SHORT_URL_NOT_FOUND"));
 	}
 
 	@Test

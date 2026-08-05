@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { ApiClientError } from '../auth/authApi'
 import { deleteShortUrl, updateShortUrlStatus } from './linkApi'
 import { EditLinkPanel } from './EditLinkPanel'
+import { QrCodePanel } from './QrCodePanel'
 import type { ShortUrl } from './types'
 
 interface LinkCardProps {
@@ -17,6 +18,7 @@ export function LinkCard({ link, onUpdated, onDeleted, onViewAnalytics }: LinkCa
 	const [error, setError] = useState('')
 	const [renderedAt] = useState(() => Date.now())
 	const [editing, setEditing] = useState(false)
+	const [showQrCode, setShowQrCode] = useState(false)
 
   async function copyLink() {
     try {
@@ -77,6 +79,7 @@ export function LinkCard({ link, onUpdated, onDeleted, onViewAnalytics }: LinkCa
       <div className="click-metric"><strong>{link.clickCount.toLocaleString()}</strong><span>clicks</span></div>
       <div className="link-actions">
         <button type="button" onClick={() => onViewAnalytics(link)}>Analytics</button>
+		<button type="button" onClick={() => setShowQrCode(true)}>QR</button>
         {link.status !== 'BLOCKED' && <button type="button" onClick={() => setEditing(true)}>Edit</button>}
         <button type="button" onClick={copyLink}>{copied ? 'Copied' : 'Copy'}</button>
         {link.status !== 'BLOCKED' && !expired && <button type="button" onClick={toggleStatus} disabled={working}>{link.status === 'ACTIVE' ? 'Disable' : 'Enable'}</button>}
@@ -84,6 +87,7 @@ export function LinkCard({ link, onUpdated, onDeleted, onViewAnalytics }: LinkCa
       </div>
       {error && <p className="link-error" role="alert">{error}</p>}
       {editing && <EditLinkPanel link={link} onClose={() => setEditing(false)} onUpdated={onUpdated} />}
+	  {showQrCode && <QrCodePanel link={link} onClose={() => setShowQrCode(false)} />}
     </article>
   )
 }

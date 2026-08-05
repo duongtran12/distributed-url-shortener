@@ -5,6 +5,10 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.validation.annotation.Validated;
@@ -26,9 +30,13 @@ import org.springframework.web.bind.annotation.RestController;
 public class ShortUrlController {
 
 	private final ShortUrlService shortUrlService;
+	private final ShortUrlQrCodeService shortUrlQrCodeService;
 
-	public ShortUrlController(ShortUrlService shortUrlService) {
+	public ShortUrlController(
+			ShortUrlService shortUrlService,
+			ShortUrlQrCodeService shortUrlQrCodeService) {
 		this.shortUrlService = shortUrlService;
+		this.shortUrlQrCodeService = shortUrlQrCodeService;
 	}
 
 	@PostMapping
@@ -54,6 +62,20 @@ public class ShortUrlController {
 			@AuthenticationPrincipal Jwt jwt,
 			@PathVariable @Min(1) Long id) {
 		return shortUrlService.findOwnedById(jwt.getClaim("uid"), id);
+	}
+
+	@GetMapping(value = "/{id}/qr", produces = MediaType.IMAGE_PNG_VALUE)
+	public ResponseEntity<byte[]> getQrCode(
+			@AuthenticationPrincipal Jwt jwt,
+			@PathVariable @Min(1) Long id) {
+		ShortUrlQrCodeService.QrCodeImage image =
+				shortUrlQrCodeService.generate(jwt.getClaim("uid"), id);
+		return ResponseEntity.ok()
+				.contentType(MediaType.IMAGE_PNG)
+				.header(
+						HttpHeaders.CONTENT_DISPOSITION,
+						ContentDisposition.inline().filename(image.filename()).build().toString())
+				.body(image.content());
 	}
 
 	@PatchMapping("/{id}/status")
