@@ -27,6 +27,18 @@ export class ApiClientError extends Error {
 }
 
 export async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const response = await authorizedRequest(path, options)
+
+  if (response.status === 204) return undefined as T
+  return response.json() as Promise<T>
+}
+
+export async function apiDownload(path: string): Promise<Blob> {
+  const response = await authorizedRequest(path)
+  return response.blob()
+}
+
+async function authorizedRequest(path: string, options: RequestInit = {}): Promise<Response> {
   const token = getAccessToken()
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
@@ -55,8 +67,7 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
     throw new ApiClientError(payload, response.status)
   }
 
-  if (response.status === 204) return undefined as T
-  return response.json() as Promise<T>
+  return response
 }
 
 export async function login(email: string, password: string): Promise<UserProfile> {

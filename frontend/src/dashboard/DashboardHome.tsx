@@ -2,7 +2,7 @@ import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react
 import { ApiClientError } from '../auth/authApi'
 import { AccountSettingsPanel } from '../auth/AccountSettingsPanel'
 import type { UserProfile } from '../auth/types'
-import { getAnalyticsOverview } from '../analytics/analyticsApi'
+import { getAnalyticsCsv, getAnalyticsOverview } from '../analytics/analyticsApi'
 import { TrafficChart } from '../analytics/TrafficChart'
 import { UrlAnalyticsPanel } from '../analytics/UrlAnalyticsPanel'
 import type { AnalyticsOverview } from '../analytics/types'
@@ -33,6 +33,8 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged }: Das
 	const [analyticsLoading, setAnalyticsLoading] = useState(true)
 	const [analyticsError, setAnalyticsError] = useState('')
 	const [analyticsRefresh, setAnalyticsRefresh] = useState(0)
+	const [exportingAnalytics, setExportingAnalytics] = useState(false)
+	const [exportError, setExportError] = useState('')
 	const [selectedAnalyticsLink, setSelectedAnalyticsLink] = useState<ShortUrl | null>(null)
 	const [showAccountSettings, setShowAccountSettings] = useState(false)
 	const [searchInput, setSearchInput] = useState('')
@@ -148,6 +150,26 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged }: Das
 		setAnalyticsDays(days)
 	}
 
+	async function exportAnalytics() {
+		setExportingAnalytics(true)
+		setExportError('')
+		try {
+			const { blob, filename } = await getAnalyticsCsv(analyticsDays)
+			const downloadUrl = URL.createObjectURL(blob)
+			const link = document.createElement('a')
+			link.href = downloadUrl
+			link.download = filename
+			document.body.appendChild(link)
+			link.click()
+			link.remove()
+			URL.revokeObjectURL(downloadUrl)
+		} catch (caught: unknown) {
+			setExportError(caught instanceof ApiClientError ? caught.message : 'Could not export analytics.')
+		} finally {
+			setExportingAnalytics(false)
+		}
+	}
+
   return (
     <main className="dashboard-shell">
       <aside className="dashboard-sidebar">
@@ -179,10 +201,14 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged }: Das
 		<section className="analytics-section" id="analytics">
 		  <div className="section-heading analytics-heading">
 			<div><span className="capability-index">TRAFFIC SIGNAL</span><h2>Click activity</h2></div>
-			<div className="range-picker" aria-label="Analytics date range">
-			  {[7, 30, 90].map((days) => <button key={days} className={analyticsDays === days ? 'active' : ''} type="button" onClick={() => changeAnalyticsRange(days)}>{days}D</button>)}
+			<div className="analytics-controls">
+			  <div className="range-picker" aria-label="Analytics date range">
+				{[7, 30, 90].map((days) => <button key={days} className={analyticsDays === days ? 'active' : ''} type="button" onClick={() => changeAnalyticsRange(days)}>{days}D</button>)}
+			  </div>
+			  <button className="export-button" type="button" disabled={exportingAnalytics} onClick={() => void exportAnalytics()}>{exportingAnalytics ? 'Exporting...' : 'Export CSV'}</button>
 			</div>
 		  </div>
+		  {exportError && <div className="export-error" role="alert">{exportError}</div>}
 		  {analyticsError ? <div className="auth-error links-load-error">{analyticsError}<button type="button" onClick={refreshAnalytics}>Retry</button></div> : (
 			<div className={`analytics-panel ${analyticsLoading ? 'analytics-panel--loading' : ''}`}>
 			  <div className="analytics-total"><span>Lifetime clicks</span><strong>{(analytics?.lifetimeClicks ?? 0).toLocaleString()}</strong><small>{analytics?.from} / {analytics?.to}</small></div>
