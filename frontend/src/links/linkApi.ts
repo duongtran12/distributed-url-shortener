@@ -1,5 +1,5 @@
 import { apiRequest } from '../auth/authApi'
-import type { CreateShortUrlInput, ShortUrl, ShortUrlPage } from './types'
+import type { CreateShortUrlInput, ShortUrl, ShortUrlPage, UpdateShortUrlInput } from './types'
 
 export function getShortUrls(page = 0, size = 20) {
   return apiRequest<ShortUrlPage>(`/api/v1/urls?page=${page}&size=${size}`)
@@ -16,6 +16,13 @@ export function updateShortUrlStatus(id: number, status: 'ACTIVE' | 'DISABLED') 
   return apiRequest<ShortUrl>(`/api/v1/urls/${id}/status`, {
     method: 'PATCH',
     body: JSON.stringify({ status }),
+  })
+}
+
+export function updateShortUrl(id: number, input: UpdateShortUrlInput) {
+  return apiRequest<ShortUrl>(`/api/v1/urls/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(input),
   })
 }
 

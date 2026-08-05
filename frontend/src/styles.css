@@ -228,6 +228,19 @@ h1 em { color: #65e7ae; font-style: normal; font-weight: 700; }
 .settings-form input:focus { border-color: #55e6a8; box-shadow: 0 0 0 3px rgba(85,230,168,.08); }
 .settings-form small { color: #ff907d; text-transform: none; letter-spacing: 0; }
 
+.edit-link-backdrop { z-index: 50; place-items: center; padding: 24px; }
+.edit-link-panel { width: min(650px, 100%); max-height: calc(100vh - 48px); overflow-y: auto; background: #091813; border: 1px solid #315044; border-radius: 10px; box-shadow: 0 35px 100px rgba(0,0,0,.55); }
+.edit-link-header { display: flex; justify-content: space-between; align-items: start; gap: 28px; padding: 30px 32px 27px; border-bottom: 1px solid #284138; }
+.edit-link-header h2 { margin: 10px 0 7px; color: #dcebe4; font-size: 27px; letter-spacing: -.045em; }
+.edit-link-header > div > p:last-child { max-width: 500px; margin: 0; color: #789087; font-size: 13px; line-height: 1.6; }
+.edit-link-form { display: grid; gap: 20px; padding: 28px 32px 32px; }
+.edit-link-form label { display: grid; gap: 8px; color: #a5b8af; font: 10px 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .09em; }
+.edit-link-form label > span { color: #60786d; font-size: 9px; }
+.edit-link-form input { width: 100%; padding: 13px 14px; color: #edf7f2; background: #07130f; border: 1px solid #294238; border-radius: 5px; outline: none; font: 14px 'Manrope', sans-serif; text-transform: none; letter-spacing: 0; }
+.edit-link-form input:focus { border-color: #55e6a8; box-shadow: 0 0 0 3px rgba(85,230,168,.08); }
+.edit-link-form small { color: #ff907d; text-transform: none; letter-spacing: 0; }
+.edit-link-note { padding: 11px 13px; color: #dbc28f; background: rgba(219,194,143,.06); border-left: 2px solid #cda85f; font-size: 12px; line-height: 1.55; }
+
 @media (max-width: 900px) {
   .topbar .text-button { display: none; }
   .hero { grid-template-columns: 1fr; padding-top: 60px; }
@@ -258,6 +271,9 @@ h1 em { color: #65e7ae; font-style: normal; font-weight: 700; }
   .profile-details { grid-template-columns: 1fr; }
   .profile-details > div, .profile-details > div:nth-child(2n), .profile-details > div:nth-last-child(-n+2) { padding-left: 22px; padding-right: 22px; border-right: 0; border-bottom: 1px solid #284138; }
   .profile-details > div:last-child { border-bottom: 0; }
+  .edit-link-backdrop { padding: 0; }
+  .edit-link-panel { width: 100%; max-height: 100vh; min-height: 100vh; border: 0; border-radius: 0; }
+  .edit-link-header, .edit-link-form { padding-left: 22px; padding-right: 22px; }
   .dashboard-content { width: min(100% - 28px, 1050px); padding-top: 36px; }
   .dashboard-header { display: grid; }
   .dashboard-identity { justify-items: start; }

@@ -25,3 +25,8 @@ export interface CreateShortUrlInput {
   customAlias?: string
   expiresAt?: string
 }
+
+export interface UpdateShortUrlInput {
+  originalUrl: string
+  expiresAt: string | null
+}
