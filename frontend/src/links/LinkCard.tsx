@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { ApiClientError } from '../auth/authApi'
 import { deleteShortUrl, updateShortUrlStatus } from './linkApi'
+import { EditLinkPanel } from './EditLinkPanel'
 import type { ShortUrl } from './types'
 
 interface LinkCardProps {
@@ -15,6 +16,7 @@ export function LinkCard({ link, onUpdated, onDeleted, onViewAnalytics }: LinkCa
 	const [copied, setCopied] = useState(false)
 	const [error, setError] = useState('')
 	const [renderedAt] = useState(() => Date.now())
+	const [editing, setEditing] = useState(false)
 
   async function copyLink() {
     try {
@@ -75,11 +77,13 @@ export function LinkCard({ link, onUpdated, onDeleted, onViewAnalytics }: LinkCa
       <div className="click-metric"><strong>{link.clickCount.toLocaleString()}</strong><span>clicks</span></div>
       <div className="link-actions">
         <button type="button" onClick={() => onViewAnalytics(link)}>Analytics</button>
+        {link.status !== 'BLOCKED' && <button type="button" onClick={() => setEditing(true)}>Edit</button>}
         <button type="button" onClick={copyLink}>{copied ? 'Copied' : 'Copy'}</button>
         {link.status !== 'BLOCKED' && !expired && <button type="button" onClick={toggleStatus} disabled={working}>{link.status === 'ACTIVE' ? 'Disable' : 'Enable'}</button>}
         <button className="danger-action" type="button" onClick={remove} disabled={working}>Delete</button>
       </div>
       {error && <p className="link-error" role="alert">{error}</p>}
+      {editing && <EditLinkPanel link={link} onClose={() => setEditing(false)} onUpdated={onUpdated} />}
     </article>
   )
 }
