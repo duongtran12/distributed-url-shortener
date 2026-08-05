@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { AuthPanel } from './auth/AuthPanel'
-import { clearAccessToken, getAccessToken, getCurrentUser } from './auth/authApi'
+import { clearAccessToken, getAccessToken, getCurrentUser, SESSION_EXPIRED_EVENT } from './auth/authApi'
 import type { UserProfile } from './auth/types'
 import { DashboardHome } from './dashboard/DashboardHome'
 import { HealthBadge, type HealthState } from './components/HealthBadge'
@@ -23,6 +23,18 @@ function App() {
   const [authNotice, setAuthNotice] = useState('')
   const [user, setUser] = useState<UserProfile | null>(null)
   const [sessionLoading, setSessionLoading] = useState(() => Boolean(getAccessToken()))
+
+  useEffect(() => {
+    function handleSessionExpired() {
+      setUser(null)
+      setSessionLoading(false)
+      setAuthNotice('Your session has expired. Please sign in again.')
+      setAuthView('login')
+    }
+
+    window.addEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired)
+    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired)
+  }, [])
 
   useEffect(() => {
     const controller = new AbortController()

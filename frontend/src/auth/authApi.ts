@@ -2,6 +2,7 @@ import type { ApiErrorPayload, UserProfile } from './types'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
 const TOKEN_KEY = 'shortwave.access-token'
+export const SESSION_EXPIRED_EVENT = 'shortwave:session-expired'
 
 interface LoginResponse {
   accessToken: string
@@ -11,12 +12,14 @@ interface LoginResponse {
 
 export class ApiClientError extends Error {
   readonly code?: string
+  readonly status: number
   readonly fieldErrors: Record<string, string>
 
   constructor(payload: ApiErrorPayload, status: number) {
     super(payload.message || `Request failed with status ${status}`)
     this.name = 'ApiClientError'
     this.code = payload.code
+    this.status = status
     this.fieldErrors = Object.fromEntries(
       (payload.fieldErrors || []).map((error) => [error.field.split('.').at(-1) || error.field, error.message]),
     )
@@ -41,7 +44,14 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
     } catch {
       payload = { message: 'The server returned an unreadable response' }
     }
-    if (response.status === 401 && token) clearAccessToken()
+    if (response.status === 401 && token) {
+      clearAccessToken()
+      window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT))
+      payload = {
+        ...payload,
+        message: 'Your session has expired. Please sign in again.',
+      }
+    }
     throw new ApiClientError(payload, response.status)
   }
 
