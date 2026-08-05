@@ -84,6 +84,55 @@ class ShortUrlManagementIntegrationTest {
 	}
 
 	@Test
+	void shouldSearchAndFilterOnlyOwnedUrls() throws Exception {
+		shortUrlRepository.saveAndFlush(
+				ShortUrl.create(owner, "SpringDocs", "https://docs.spring.io/reference", false, null));
+		ShortUrl disabled = ShortUrl.create(
+				owner, "archive1", "https://example.com/spring-archive", false, null);
+		disabled.disable();
+		shortUrlRepository.saveAndFlush(disabled);
+		shortUrlRepository.saveAndFlush(
+				ShortUrl.create(otherUser, "spring-private", "https://example.com/spring", false, null));
+
+		mockMvc.perform(get("/api/v1/urls")
+				.param("query", "SPRING")
+				.param("status", "ACTIVE")
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.content.length()").value(1))
+				.andExpect(jsonPath("$.content[0].shortCode").value("SpringDocs"))
+				.andExpect(jsonPath("$.totalElements").value(1));
+
+		mockMvc.perform(get("/api/v1/urls")
+				.param("query", "spring")
+				.param("status", "DISABLED")
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.content.length()").value(1))
+				.andExpect(jsonPath("$.content[0].shortCode").value("archive1"));
+	}
+
+	@Test
+	void shouldTreatSearchWildcardsAsLiteralCharactersAndLimitQueryLength() throws Exception {
+		shortUrlRepository.saveAndFlush(
+				ShortUrl.create(owner, "percent1", "https://example.com/rate%25", false, null));
+		shortUrlRepository.saveAndFlush(
+				ShortUrl.create(owner, "ordinary", "https://example.com/plain", false, null));
+
+		mockMvc.perform(get("/api/v1/urls")
+				.param("query", "%")
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.content.length()").value(1))
+				.andExpect(jsonPath("$.content[0].shortCode").value("percent1"));
+
+		mockMvc.perform(get("/api/v1/urls")
+				.param("query", "a".repeat(201))
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken))
+				.andExpect(status().isBadRequest());
+	}
+
+	@Test
 	void shouldReturnOwnedUrlDetails() throws Exception {
 		ShortUrl shortUrl = shortUrlRepository.saveAndFlush(
 				ShortUrl.create(owner, "details", "https://example.com/details", true, null));
