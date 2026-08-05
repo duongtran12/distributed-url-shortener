@@ -7,10 +7,10 @@ import { HealthBadge, type HealthState } from './components/HealthBadge'
 
 type AuthView = 'login' | 'register' | null
 
-const capabilities = [
-  { label: 'Fast redirects', detail: 'Redis-backed resolution', value: '< 20 ms' },
-  { label: 'Click pipeline', detail: 'RabbitMQ event delivery', value: 'Async' },
-  { label: 'Traffic guard', detail: 'Distributed rate limiting', value: 'Active' },
+const platformFeatures = [
+  { index: '01', title: 'Reliable redirects', detail: 'Redis caching keeps frequently used routes responsive while PostgreSQL remains the source of truth.' },
+  { index: '02', title: 'Asynchronous tracking', detail: 'Click events move through RabbitMQ so analytics processing never blocks a visitor redirect.' },
+  { index: '03', title: 'Actionable analytics', detail: 'Understand traffic trends, unique visitors, devices, referrers, browsers, and operating systems.' },
 ]
 
 function ArrowIcon() {
@@ -80,7 +80,6 @@ function App() {
           <span>shortwave</span>
         </a>
         <div className="nav-actions">
-          <HealthBadge health={health} />
           <button className="text-button" type="button" onClick={() => setAuthView('login')}>
             Sign in
           </button>
@@ -92,42 +91,46 @@ function App() {
 
       <section className="hero" id="top">
         <div className="hero-copy">
-          <p className="eyebrow"><span /> Distributed by design</p>
-          <h1>Short links.<br /><em>Clear signals.</em></h1>
+          <p className="eyebrow"><span /> Link management and analytics</p>
+          <h1>Shorten links.<br /><em>Understand every click.</em></h1>
           <p className="hero-description">
-            Create resilient short links and understand every click through a privacy-first,
-            real-time analytics platform.
+            Create reliable short URLs, control every destination, and turn live traffic into
+            useful insight from one focused workspace.
           </p>
           <div className="hero-actions">
             <button className="primary-button" type="button" onClick={() => setAuthView('register')}>
-              Create your first link <ArrowIcon />
+              Create an account <ArrowIcon />
             </button>
-            <a className="secondary-link" href="#architecture">Explore the architecture <span>v</span></a>
+            <button className="secondary-button" type="button" onClick={() => setAuthView('login')}>Sign in to your workspace</button>
+          </div>
+          <div className="hero-assurance" aria-label="Platform capabilities">
+            <span>Custom aliases</span><span>Private analytics</span><span>Distributed infrastructure</span>
           </div>
         </div>
 
-        <div className="signal-card" aria-label="Live traffic preview">
-          <div className="signal-card__top">
-            <div><span className="muted-label">Live traffic</span><strong>2,847</strong></div>
-            <span className="trend">+18.4%</span>
+        <aside className="workflow-card" id="workflow" aria-label="How Shortwave works">
+          <div className="workflow-card__header">
+            <div><span className="muted-label">A simpler workflow</span><h2>From long URL to clear signal.</h2></div>
+            <HealthBadge health={health} />
           </div>
-          <div className="chart" aria-hidden="true">
-            <svg viewBox="0 0 560 210" preserveAspectRatio="none">
-              <defs><linearGradient id="chart-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#50e3a4" stopOpacity="0.32" /><stop offset="100%" stopColor="#50e3a4" stopOpacity="0" /></linearGradient></defs>
-              <path className="chart-area" d="M0 178 C46 172 62 126 108 139 S176 168 213 109 S278 82 314 118 S369 144 402 76 S474 28 560 45 L560 210 L0 210 Z" />
-              <path className="chart-line" d="M0 178 C46 172 62 126 108 139 S176 168 213 109 S278 82 314 118 S369 144 402 76 S474 28 560 45" />
-            </svg>
+          <ol className="workflow-list">
+            <li><span>01</span><div><strong>Create</strong><p>Choose a generated code or a memorable custom alias.</p></div></li>
+            <li><span>02</span><div><strong>Share</strong><p>Route visitors through a cached, resilient redirect path.</p></div></li>
+            <li><span>03</span><div><strong>Learn</strong><p>Inspect traffic trends without storing raw visitor addresses.</p></div></li>
+          </ol>
+          <div className="workflow-route" aria-label="Example short URL">
+            <span className="health-dot" />
+            <code>shortwave / product-launch</code>
+            <span>Ready</span>
           </div>
-          <div className="signal-footer"><span><i className="pulse" /> Events streaming</span><span>Last 24 hours</span></div>
-        </div>
+        </aside>
       </section>
 
-      <section className="capabilities" id="architecture" aria-label="Platform capabilities">
-        {capabilities.map((item, index) => (
-          <article className="capability" key={item.label}>
-            <span className="capability-index">0{index + 1}</span>
-            <div><h2>{item.label}</h2><p>{item.detail}</p></div>
-            <strong>{item.value}</strong>
+      <section className="platform-features" aria-label="Platform features">
+        {platformFeatures.map((item) => (
+          <article className="platform-feature" key={item.title}>
+            <span className="capability-index">{item.index}</span>
+            <div><h2>{item.title}</h2><p>{item.detail}</p></div>
           </article>
         ))}
       </section>

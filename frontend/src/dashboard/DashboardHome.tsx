@@ -123,16 +123,16 @@ export function DashboardHome({ user, health, onLogout }: DashboardHomeProps) {
       <aside className="dashboard-sidebar">
         <a className="brand" href="/" aria-label="Shortwave dashboard"><span className="brand-mark">S</span><span>shortwave</span></a>
         <nav className="dashboard-nav" aria-label="Dashboard navigation">
-          <a href="#overview">Overview</a>
-          <a className="active" href="#links">Links</a>
-          <a href="#analytics">Analytics</a>
+          <a href="#overview">Workspace</a>
+          <a href="#analytics">Traffic</a>
+          <a href="#links">Short links</a>
         </nav>
         <button className="logout-button" type="button" onClick={onLogout}>Sign out</button>
       </aside>
 
       <section className="dashboard-content">
         <header className="workspace-header" id="overview">
-          <div><p className="eyebrow"><span /> Link workspace</p><h1>{user.displayName}</h1><p>Build, control, and inspect every route from one place.</p></div>
+          <div><p className="eyebrow"><span /> Workspace overview</p><h1>Welcome, {user.displayName}</h1><p>Create, manage, and understand every short link from one place.</p></div>
           <div className="dashboard-identity"><HealthBadge health={health} /><span>{user.email}</span></div>
         </header>
 
