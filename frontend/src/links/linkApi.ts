@@ -1,4 +1,4 @@
-import { apiRequest } from '../auth/authApi'
+import { apiDownload, apiRequest } from '../auth/authApi'
 import type { CreateShortUrlInput, ShortUrl, ShortUrlPage, ShortUrlStatus, UpdateShortUrlInput } from './types'
 
 export interface ShortUrlFilters {
@@ -36,4 +36,8 @@ export function updateShortUrl(id: number, input: UpdateShortUrlInput) {
 
 export function deleteShortUrl(id: number) {
   return apiRequest<void>(`/api/v1/urls/${id}`, { method: 'DELETE' })
+}
+
+export function getShortUrlQrCode(id: number) {
+  return apiDownload(`/api/v1/urls/${id}/qr`)
 }
