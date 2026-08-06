@@ -235,7 +235,7 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged }: Das
           <form className="link-filters" onSubmit={handleSearch}>
 			<label className="link-search">
 			  <span>Search routes</span>
-			  <input value={searchInput} onChange={(event) => setSearchInput(event.target.value)} maxLength={200} placeholder="Short code or destination URL" />
+			  <input value={searchInput} onChange={(event) => setSearchInput(event.target.value)} maxLength={200} placeholder="Title, short code, or destination URL" />
 			</label>
 			<button className="filter-submit" type="submit" disabled={loading}>Search</button>
 			<label className="status-filter">

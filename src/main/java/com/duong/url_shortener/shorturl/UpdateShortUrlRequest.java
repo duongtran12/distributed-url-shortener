@@ -7,5 +7,6 @@ import jakarta.validation.constraints.Size;
 
 public record UpdateShortUrlRequest(
 		@NotBlank @Size(max = 2048) String originalUrl,
+		@Size(max = 120) String title,
 		Instant expiresAt) {
 }
