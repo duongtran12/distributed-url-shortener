@@ -3,8 +3,10 @@ package com.duong.url_shortener.common.exception;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -17,6 +19,14 @@ public class ErrorHandlingTestController {
 	@PostMapping("/test/business")
 	void businessError() {
 		throw new ApiException(HttpStatus.CONFLICT, "SHORT_CODE_CONFLICT", "Short code already exists");
+	}
+
+	@GetMapping("/test/enum")
+	void enumParameter(@RequestParam TestSort sort) {
+	}
+
+	enum TestSort {
+		NEWEST
 	}
 
 	record TestRequest(@NotBlank String value) {

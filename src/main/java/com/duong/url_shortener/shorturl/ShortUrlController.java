@@ -53,8 +53,9 @@ public class ShortUrlController {
 			@RequestParam(defaultValue = "0") @Min(0) int page,
 			@RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
 			@RequestParam(required = false) @Size(max = 200) String query,
-			@RequestParam(required = false) ShortUrlStatus status) {
-		return shortUrlService.findAllOwnedBy(jwt.getClaim("uid"), page, size, query, status);
+			@RequestParam(required = false) ShortUrlStatus status,
+			@RequestParam(defaultValue = "NEWEST") ShortUrlSort sort) {
+		return shortUrlService.findAllOwnedBy(jwt.getClaim("uid"), page, size, query, status, sort);
 	}
 
 	@GetMapping("/{id}")

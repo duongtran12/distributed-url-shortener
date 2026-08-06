@@ -29,6 +29,7 @@ import org.springframework.boot.testcontainers.service.connection.ServiceConnect
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.junit.jupiter.Container;
@@ -56,6 +57,9 @@ class ShortUrlManagementIntegrationTest {
 
 	@Autowired
 	private JwtTokenService jwtTokenService;
+
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
 
 	@Autowired
 	private ShortUrlProperties shortUrlProperties;
@@ -154,6 +158,48 @@ class ShortUrlManagementIntegrationTest {
 
 		mockMvc.perform(get("/api/v1/urls")
 				.param("query", "a".repeat(201))
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken))
+				.andExpect(status().isBadRequest());
+	}
+
+	@Test
+	void shouldSortOwnedUrlsByClicksWithStablePagination() throws Exception {
+		ShortUrl low = shortUrlRepository.saveAndFlush(
+				ShortUrl.create(owner, "sortlow", "https://example.com/low", false, null));
+		ShortUrl high = shortUrlRepository.saveAndFlush(
+				ShortUrl.create(owner, "sorthigh", "https://example.com/high", false, null));
+		ShortUrl middle = shortUrlRepository.saveAndFlush(
+				ShortUrl.create(owner, "sortmid", "https://example.com/middle", false, null));
+		ShortUrl foreign = shortUrlRepository.saveAndFlush(
+				ShortUrl.create(otherUser, "sortforeign", "https://example.com/foreign", false, null));
+
+		setClickCount(low.getId(), 2);
+		setClickCount(high.getId(), 20);
+		setClickCount(middle.getId(), 7);
+		setClickCount(foreign.getId(), 100);
+
+		mockMvc.perform(get("/api/v1/urls")
+				.param("sort", "MOST_CLICKED")
+				.param("size", "2")
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.content[0].shortCode").value("sorthigh"))
+				.andExpect(jsonPath("$.content[0].clickCount").value(20))
+				.andExpect(jsonPath("$.content[1].shortCode").value("sortmid"))
+				.andExpect(jsonPath("$.totalElements").value(3))
+				.andExpect(jsonPath("$.totalPages").value(2));
+
+		mockMvc.perform(get("/api/v1/urls")
+				.param("sort", "MOST_CLICKED")
+				.param("size", "2")
+				.param("page", "1")
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.content.length()").value(1))
+				.andExpect(jsonPath("$.content[0].shortCode").value("sortlow"));
+
+		mockMvc.perform(get("/api/v1/urls")
+				.param("sort", "POPULAR")
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken))
 				.andExpect(status().isBadRequest());
 	}
@@ -370,5 +416,9 @@ class ShortUrlManagementIntegrationTest {
 				.content("""
 						{"status": "%s"}
 						""".formatted(newStatus)));
+	}
+
+	private void setClickCount(Long id, long clicks) {
+		jdbcTemplate.update("UPDATE short_urls SET click_count = ? WHERE id = ?", clicks, id);
 	}
 }
