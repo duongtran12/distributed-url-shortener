@@ -6,6 +6,7 @@ export type BulkShortUrlAction = 'ENABLE' | 'DISABLE' | 'DELETE'
 
 export interface ShortUrlFilters {
 	query?: string
+	tag?: string
 	status?: ShortUrlStatus
 	sort?: ShortUrlSort
 }
@@ -13,6 +14,7 @@ export interface ShortUrlFilters {
 export function getShortUrls(page = 0, size = 20, filters: ShortUrlFilters = {}) {
 	const params = new URLSearchParams({ page: String(page), size: String(size) })
 	if (filters.query) params.set('query', filters.query)
+	if (filters.tag) params.set('tag', filters.tag)
 	if (filters.status) params.set('status', filters.status)
 	if (filters.sort) params.set('sort', filters.sort)
 	return apiRequest<ShortUrlPage>(`/api/v1/urls?${params.toString()}`)

@@ -144,6 +144,24 @@ class ShortUrlManagementIntegrationTest {
 	}
 
 	@Test
+	void shouldFilterOwnedUrlsByNormalizedTag() throws Exception {
+		shortUrlRepository.saveAndFlush(
+				ShortUrl.create(owner, "tagged01", "https://example.com/campaign", "Campaign", "marketing", false, null));
+		shortUrlRepository.saveAndFlush(
+				ShortUrl.create(owner, "tagged02", "https://example.com/internal", "Internal", "internal", false, null));
+		shortUrlRepository.saveAndFlush(
+				ShortUrl.create(otherUser, "tagged03", "https://example.com/private", "Private", "marketing", false, null));
+
+		mockMvc.perform(get("/api/v1/urls")
+				.param("tag", "MARKETING")
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.content.length()").value(1))
+				.andExpect(jsonPath("$.content[0].shortCode").value("tagged01"))
+				.andExpect(jsonPath("$.content[0].tag").value("marketing"));
+	}
+
+	@Test
 	void shouldTreatSearchWildcardsAsLiteralCharactersAndLimitQueryLength() throws Exception {
 		shortUrlRepository.saveAndFlush(
 				ShortUrl.create(owner, "percent1", "https://example.com/rate%25", false, null));
@@ -323,6 +341,7 @@ class ShortUrlManagementIntegrationTest {
 						{
 						  "originalUrl": "https://example.com/new",
 						  "title": "  Updated campaign  ",
+						  "tag": "MARKETING",
 						  "expiresAt": "2099-12-31T23:59:59Z"
 						}
 						"""))
@@ -330,6 +349,7 @@ class ShortUrlManagementIntegrationTest {
 				.andExpect(jsonPath("$.shortCode").value("editable"))
 				.andExpect(jsonPath("$.originalUrl").value("https://example.com/new"))
 				.andExpect(jsonPath("$.title").value("Updated campaign"))
+				.andExpect(jsonPath("$.tag").value("marketing"))
 				.andExpect(jsonPath("$.expiresAt").value("2099-12-31T23:59:59Z"));
 
 		mockMvc.perform(put("/api/v1/urls/{id}", shortUrl.getId())
@@ -339,11 +359,13 @@ class ShortUrlManagementIntegrationTest {
 						{
 						  "originalUrl": "https://example.com/new",
 						  "title": "",
+						  "tag": "",
 						  "expiresAt": "2099-12-31T23:59:59Z"
 						}
 						"""))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.title").doesNotExist());
+				.andExpect(jsonPath("$.title").doesNotExist())
+				.andExpect(jsonPath("$.tag").doesNotExist());
 
 		mockMvc.perform(get("/{shortCode}", "editable"))
 				.andExpect(status().isFound())

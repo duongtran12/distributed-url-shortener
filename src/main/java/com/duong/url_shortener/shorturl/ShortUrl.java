@@ -39,6 +39,9 @@ public class ShortUrl {
 	@Column(length = 120)
 	private String title;
 
+	@Column(length = 32)
+	private String tag;
+
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false, length = 20)
 	private ShortUrlStatus status;
@@ -70,12 +73,14 @@ public class ShortUrl {
 			String shortCode,
 			String originalUrl,
 			String title,
+			String tag,
 			boolean customAlias,
 			Instant expiresAt) {
 		this.owner = owner;
 		this.shortCode = shortCode;
 		this.originalUrl = originalUrl;
 		this.title = title;
+		this.tag = tag;
 		this.status = ShortUrlStatus.ACTIVE;
 		this.customAlias = customAlias;
 		this.expiresAt = expiresAt;
@@ -97,7 +102,18 @@ public class ShortUrl {
 			String title,
 			boolean customAlias,
 			Instant expiresAt) {
-		return new ShortUrl(owner, shortCode, originalUrl, title, customAlias, expiresAt);
+		return create(owner, shortCode, originalUrl, title, null, customAlias, expiresAt);
+	}
+
+	public static ShortUrl create(
+			User owner,
+			String shortCode,
+			String originalUrl,
+			String title,
+			String tag,
+			boolean customAlias,
+			Instant expiresAt) {
+		return new ShortUrl(owner, shortCode, originalUrl, title, tag, customAlias, expiresAt);
 	}
 
 	public boolean isExpiredAt(Instant instant) {
@@ -124,9 +140,10 @@ public class ShortUrl {
 		status = ShortUrlStatus.BLOCKED;
 	}
 
-	public void updateDetails(String originalUrl, String title, Instant expiresAt) {
+	public void updateDetails(String originalUrl, String title, String tag, Instant expiresAt) {
 		this.originalUrl = originalUrl;
 		this.title = title;
+		this.tag = tag;
 		this.expiresAt = expiresAt;
 	}
 
@@ -160,6 +177,10 @@ public class ShortUrl {
 
 	public String getTitle() {
 		return title;
+	}
+
+	public String getTag() {
+		return tag;
 	}
 
 	public ShortUrlStatus getStatus() {

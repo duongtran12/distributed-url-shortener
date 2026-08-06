@@ -6,6 +6,7 @@ export interface ShortUrl {
   shortUrl: string
   originalUrl: string
   title: string | null
+  tag: string | null
   status: ShortUrlStatus
   customAlias: boolean
   expiresAt: string | null
@@ -24,6 +25,7 @@ export interface ShortUrlPage {
 export interface CreateShortUrlInput {
   originalUrl: string
   title?: string
+  tag?: string
   customAlias?: string
   expiresAt?: string
 }
@@ -31,5 +33,6 @@ export interface CreateShortUrlInput {
 export interface UpdateShortUrlInput {
   originalUrl: string
   title: string | null
+  tag: string | null
   expiresAt: string | null
 }
