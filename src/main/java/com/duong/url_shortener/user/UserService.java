@@ -23,6 +23,13 @@ public class UserService {
 	}
 
 	@Transactional
+	public UserProfileResponse updateProfile(Long userId, UpdateProfileRequest request) {
+		User user = findActiveUser(userId);
+		user.updateDisplayName(request.displayName());
+		return UserProfileResponse.from(user);
+	}
+
+	@Transactional
 	public void changePassword(Long userId, ChangePasswordRequest request) {
 		User user = findActiveUser(userId);
 

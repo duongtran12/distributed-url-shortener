@@ -235,6 +235,8 @@ h1 em { color: #65e7ae; font-style: normal; font-weight: 700; }
 .profile-details dt { margin-bottom: 6px; color: #60786d; font: 9px 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .09em; }
 .profile-details dd { margin: 0; overflow: hidden; color: #d6e7df; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
 .settings-form { display: grid; gap: 19px; padding: 28px 32px 32px; }
+.settings-profile-form { border-bottom: 1px solid #284138; }
+.settings-success { padding: 11px 13px; color: #69e5af; background: rgba(105,229,175,.06); border-left: 2px solid #55dca4; font-size: 12px; }
 .settings-form-heading h3 { margin: 0 0 6px; font-size: 17px; }
 .settings-form-heading p { margin: 0; color: #71877d; font-size: 12px; }
 .settings-form label { display: grid; gap: 8px; color: #a5b8af; font: 10px 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .09em; }

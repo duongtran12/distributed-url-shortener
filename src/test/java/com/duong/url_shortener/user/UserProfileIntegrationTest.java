@@ -87,6 +87,50 @@ class UserProfileIntegrationTest {
 	}
 
 	@Test
+	void shouldUpdateAndReturnNormalizedDisplayName() throws Exception {
+		String accessToken = login();
+
+		mockMvc.perform(patch("/api/v1/users/me")
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{"displayName": "  Duong Tran  "}
+						"""))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.displayName").value("Duong Tran"))
+				.andExpect(jsonPath("$.email").value("student@example.com"))
+				.andExpect(jsonPath("$.passwordHash").doesNotExist());
+
+		mockMvc.perform(get("/api/v1/users/me")
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.displayName").value("Duong Tran"));
+	}
+
+	@Test
+	void shouldRejectBlankOrOversizedDisplayName() throws Exception {
+		String accessToken = login();
+
+		mockMvc.perform(patch("/api/v1/users/me")
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{"displayName": "   "}
+						"""))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.fieldErrors[?(@.field == 'displayName')]").exists());
+
+		mockMvc.perform(patch("/api/v1/users/me")
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{"displayName": "%s"}
+						""".formatted("a".repeat(101))))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.fieldErrors[?(@.field == 'displayName')]").exists());
+	}
+
+	@Test
 	void shouldChangePasswordAndRejectTheOldPassword() throws Exception {
 		String accessToken = login();
 

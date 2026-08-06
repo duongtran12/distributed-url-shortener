@@ -26,6 +26,13 @@ public class UserController {
 		return userService.getCurrentUser(jwt.getClaim("uid"));
 	}
 
+	@PatchMapping("/me")
+	public UserProfileResponse updateCurrentUser(
+			@AuthenticationPrincipal Jwt jwt,
+			@Valid @RequestBody UpdateProfileRequest request) {
+		return userService.updateProfile(jwt.getClaim("uid"), request);
+	}
+
 	@PatchMapping("/me/password")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	public void changePassword(
