@@ -11,13 +11,26 @@ export interface ShortUrlFilters {
 	sort?: ShortUrlSort
 }
 
-export function getShortUrls(page = 0, size = 20, filters: ShortUrlFilters = {}) {
-	const params = new URLSearchParams({ page: String(page), size: String(size) })
+function filterParams(filters: ShortUrlFilters) {
+	const params = new URLSearchParams()
 	if (filters.query) params.set('query', filters.query)
 	if (filters.tag) params.set('tag', filters.tag)
 	if (filters.status) params.set('status', filters.status)
 	if (filters.sort) params.set('sort', filters.sort)
+	return params
+}
+
+export function getShortUrls(page = 0, size = 20, filters: ShortUrlFilters = {}) {
+	const params = filterParams(filters)
+	params.set('page', String(page))
+	params.set('size', String(size))
 	return apiRequest<ShortUrlPage>(`/api/v1/urls?${params.toString()}`)
+}
+
+export function exportShortUrls(filters: ShortUrlFilters = {}) {
+	const params = filterParams(filters)
+	return apiDownload(`/api/v1/urls/export?${params.toString()}`)
+		.then((blob) => ({ blob, filename: `shortwave-links-${new Date().toISOString().slice(0, 10)}.csv` }))
 }
 
 export function createShortUrl(input: CreateShortUrlInput) {

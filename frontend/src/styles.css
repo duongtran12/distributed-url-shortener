@@ -162,6 +162,7 @@ h1 em { color: #65e7ae; font-style: normal; font-weight: 700; }
 .clear-filters { color: #9eb2a9; background: transparent; border: 1px solid #2b4439; }
 .filter-submit:disabled { cursor: wait; opacity: .55; }
 .section-heading, .form-heading { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.link-heading-actions { display: flex; gap: 10px; align-items: center; }
 .section-heading h2, .form-heading h2 { margin: 6px 0 0; font-size: 27px; letter-spacing: -.04em; }
 .create-link-form { margin-top: 25px; padding: 28px; display: grid; gap: 21px; background: #0d1e18; border: 1px solid #315044; border-radius: 8px; box-shadow: 0 22px 60px rgba(0,0,0,.2); }
 .create-link-form label { display: grid; gap: 8px; color: #a5b8af; font: 10px 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .09em; }
@@ -338,6 +339,7 @@ h1 em { color: #65e7ae; font-style: normal; font-weight: 700; }
   .sort-filter { grid-column: 2 / 3; }
   .section-heading { align-items: flex-end; }
   .section-heading .primary-button { padding: 12px 14px; }
+  .link-heading-actions { align-items: stretch; flex-direction: column-reverse; }
   .link-card { grid-template-columns: auto 1fr; }
   .link-card-main, .click-metric, .link-actions { grid-column: 2; }
   .click-metric { justify-items: start; }

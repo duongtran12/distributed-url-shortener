@@ -31,12 +31,32 @@ public class ShortUrlController {
 
 	private final ShortUrlService shortUrlService;
 	private final ShortUrlQrCodeService shortUrlQrCodeService;
+	private final ShortUrlCsvExportService shortUrlCsvExportService;
 
 	public ShortUrlController(
 			ShortUrlService shortUrlService,
-			ShortUrlQrCodeService shortUrlQrCodeService) {
+			ShortUrlQrCodeService shortUrlQrCodeService,
+			ShortUrlCsvExportService shortUrlCsvExportService) {
 		this.shortUrlService = shortUrlService;
 		this.shortUrlQrCodeService = shortUrlQrCodeService;
+		this.shortUrlCsvExportService = shortUrlCsvExportService;
+	}
+
+	@GetMapping(value = "/export", produces = "text/csv")
+	public ResponseEntity<byte[]> export(
+			@AuthenticationPrincipal Jwt jwt,
+			@RequestParam(required = false) @Size(max = 200) String query,
+			@RequestParam(required = false) @Size(max = 32) String tag,
+			@RequestParam(required = false) ShortUrlStatus status,
+			@RequestParam(defaultValue = "NEWEST") ShortUrlSort sort) {
+		ShortUrlCsvExportService.CsvExport export = shortUrlCsvExportService.export(
+				jwt.getClaim("uid"), query, tag, status, sort);
+		return ResponseEntity.ok()
+				.contentType(MediaType.parseMediaType("text/csv;charset=UTF-8"))
+				.header(
+						HttpHeaders.CONTENT_DISPOSITION,
+						ContentDisposition.attachment().filename(export.filename()).build().toString())
+				.body(export.content());
 	}
 
 	@PostMapping
