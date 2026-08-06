@@ -45,6 +45,10 @@ export function deleteShortUrl(id: number) {
   return apiRequest<void>(`/api/v1/urls/${id}`, { method: 'DELETE' })
 }
 
+export function duplicateShortUrl(id: number) {
+  return apiRequest<ShortUrl>(`/api/v1/urls/${id}/duplicate`, { method: 'POST' })
+}
+
 export function bulkUpdateShortUrls(ids: number[], action: BulkShortUrlAction) {
   return apiRequest<{ action: BulkShortUrlAction, affected: number }>('/api/v1/urls/bulk', {
     method: 'POST',

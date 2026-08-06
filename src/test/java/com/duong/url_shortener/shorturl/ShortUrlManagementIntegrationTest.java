@@ -237,6 +237,55 @@ class ShortUrlManagementIntegrationTest {
 	}
 
 	@Test
+	void shouldDuplicateOwnedUrlWithANewGeneratedCode() throws Exception {
+		ShortUrl source = shortUrlRepository.saveAndFlush(
+				ShortUrl.create(
+						owner,
+						"sourcealias",
+						"https://example.com/campaign",
+						"Campaign",
+						"marketing",
+						true,
+						java.time.Instant.parse("2099-12-31T23:59:59Z")));
+		source.disable();
+		shortUrlRepository.saveAndFlush(source);
+
+		mockMvc.perform(post("/api/v1/urls/{id}/duplicate", source.getId())
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken))
+				.andExpect(status().isCreated())
+				.andExpect(jsonPath("$.id").value(org.hamcrest.Matchers.not(source.getId().intValue())))
+				.andExpect(jsonPath("$.shortCode").value(org.hamcrest.Matchers.not("sourcealias")))
+				.andExpect(jsonPath("$.originalUrl").value("https://example.com/campaign"))
+				.andExpect(jsonPath("$.title").value("Campaign"))
+				.andExpect(jsonPath("$.tag").value("marketing"))
+				.andExpect(jsonPath("$.status").value("ACTIVE"))
+				.andExpect(jsonPath("$.customAlias").value(false))
+				.andExpect(jsonPath("$.expiresAt").value("2099-12-31T23:59:59Z"));
+
+		assertEquals(2, shortUrlRepository.count());
+	}
+
+	@Test
+	void shouldRejectDuplicatingBlockedOrForeignUrls() throws Exception {
+		ShortUrl blocked = ShortUrl.create(owner, "blockedcopy", "https://example.com/blocked", false, null);
+		blocked.block();
+		shortUrlRepository.saveAndFlush(blocked);
+		ShortUrl foreign = shortUrlRepository.saveAndFlush(
+				ShortUrl.create(otherUser, "foreigncopy", "https://example.com/foreign", false, null));
+
+		mockMvc.perform(post("/api/v1/urls/{id}/duplicate", blocked.getId())
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken))
+				.andExpect(status().isConflict())
+				.andExpect(jsonPath("$.code").value("SHORT_URL_BLOCKED"));
+
+		mockMvc.perform(post("/api/v1/urls/{id}/duplicate", foreign.getId())
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken))
+				.andExpect(status().isNotFound())
+				.andExpect(jsonPath("$.code").value("SHORT_URL_NOT_FOUND"));
+		assertEquals(2, shortUrlRepository.count());
+	}
+
+	@Test
 	void shouldGenerateQrCodeForOwnedUrlAndHideForeignUrl() throws Exception {
 		ShortUrl ownedUrl = shortUrlRepository.saveAndFlush(
 				ShortUrl.create(owner, "qrtest01", "https://example.com/qr", false, null));

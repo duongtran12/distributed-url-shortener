@@ -73,6 +73,14 @@ public class ShortUrlController {
 		return shortUrlService.findOwnedById(jwt.getClaim("uid"), id);
 	}
 
+	@PostMapping("/{id}/duplicate")
+	@ResponseStatus(HttpStatus.CREATED)
+	public ShortUrlResponse duplicate(
+			@AuthenticationPrincipal Jwt jwt,
+			@PathVariable @Min(1) Long id) {
+		return shortUrlService.duplicate(jwt.getClaim("uid"), id);
+	}
+
 	@GetMapping(value = "/{id}/qr", produces = MediaType.IMAGE_PNG_VALUE)
 	public ResponseEntity<byte[]> getQrCode(
 			@AuthenticationPrincipal Jwt jwt,

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { ApiClientError } from '../auth/authApi'
-import { deleteShortUrl, updateShortUrlStatus } from './linkApi'
+import { deleteShortUrl, duplicateShortUrl, updateShortUrlStatus } from './linkApi'
 import { EditLinkPanel } from './EditLinkPanel'
 import { QrCodePanel } from './QrCodePanel'
 import type { ShortUrl } from './types'
@@ -12,9 +12,10 @@ interface LinkCardProps {
   onViewAnalytics: (link: ShortUrl) => void
   selected: boolean
   onSelectionChanged: (id: number, selected: boolean) => void
+  onDuplicated: (link: ShortUrl) => void
 }
 
-export function LinkCard({ link, onUpdated, onDeleted, onViewAnalytics, selected, onSelectionChanged }: LinkCardProps) {
+export function LinkCard({ link, onUpdated, onDeleted, onViewAnalytics, selected, onSelectionChanged, onDuplicated }: LinkCardProps) {
 	const [working, setWorking] = useState(false)
 	const [copied, setCopied] = useState(false)
 	const [error, setError] = useState('')
@@ -61,6 +62,18 @@ export function LinkCard({ link, onUpdated, onDeleted, onViewAnalytics, selected
     }
   }
 
+  async function duplicate() {
+    setWorking(true)
+    setError('')
+    try {
+      onDuplicated(await duplicateShortUrl(link.id))
+    } catch (caught: unknown) {
+      setError(caught instanceof ApiClientError ? caught.message : 'Could not duplicate this link.')
+    } finally {
+      setWorking(false)
+    }
+  }
+
 	const expired = link.expiresAt ? new Date(link.expiresAt).getTime() <= renderedAt : false
   const displayStatus = expired ? 'EXPIRED' : link.status
 
@@ -90,6 +103,7 @@ export function LinkCard({ link, onUpdated, onDeleted, onViewAnalytics, selected
 		<button type="button" onClick={() => setShowQrCode(true)}>QR</button>
         {link.status !== 'BLOCKED' && <button type="button" onClick={() => setEditing(true)}>Edit</button>}
         <button type="button" onClick={copyLink}>{copied ? 'Copied' : 'Copy'}</button>
+        {link.status !== 'BLOCKED' && <button type="button" onClick={duplicate} disabled={working}>Duplicate</button>}
         {link.status !== 'BLOCKED' && !expired && <button type="button" onClick={toggleStatus} disabled={working}>{link.status === 'ACTIVE' ? 'Disable' : 'Enable'}</button>}
         <button className="danger-action" type="button" onClick={remove} disabled={working}>Delete</button>
       </div>

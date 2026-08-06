@@ -119,6 +119,11 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
 		refreshAnalytics()
 	}
 
+	function handleDuplicated() {
+		void loadPage(0)
+		refreshAnalytics()
+	}
+
 	function handleSearch(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault()
 		const nextQuery = searchInput.trim()
@@ -346,7 +351,7 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
             </div>
           ) : (
             <div className="links-list">
-			  {links.content.map((link) => <LinkCard key={link.id} link={link} selected={selectedLinkIds.has(link.id)} onSelectionChanged={changeLinkSelection} onUpdated={handleUpdated} onDeleted={handleDeleted} onViewAnalytics={setSelectedAnalyticsLink} />)}
+			  {links.content.map((link) => <LinkCard key={link.id} link={link} selected={selectedLinkIds.has(link.id)} onSelectionChanged={changeLinkSelection} onUpdated={handleUpdated} onDeleted={handleDeleted} onDuplicated={handleDuplicated} onViewAnalytics={setSelectedAnalyticsLink} />)}
             </div>
           )}
 
