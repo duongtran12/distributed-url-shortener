@@ -143,6 +143,17 @@ public class ShortUrlService {
 	}
 
 	@Transactional
+	public ShortUrlResponse updatePin(
+			Long userId,
+			Long shortUrlId,
+			UpdateShortUrlPinRequest request) {
+		findActiveUser(userId);
+		ShortUrl shortUrl = findOwnedShortUrl(userId, shortUrlId);
+		shortUrl.setPinned(request.pinned());
+		return ShortUrlResponse.from(shortUrl, properties.baseUrl());
+	}
+
+	@Transactional
 	public ShortUrlResponse update(
 			Long userId,
 			Long shortUrlId,

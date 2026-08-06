@@ -55,6 +55,9 @@ public class ShortUrl {
 	@Column(name = "click_count", nullable = false)
 	private long clickCount;
 
+	@Column(nullable = false)
+	private boolean pinned;
+
 	@Version
 	@Column(nullable = false)
 	private long version;
@@ -140,6 +143,10 @@ public class ShortUrl {
 		status = ShortUrlStatus.BLOCKED;
 	}
 
+	public void setPinned(boolean pinned) {
+		this.pinned = pinned;
+	}
+
 	public void updateDetails(String originalUrl, String title, String tag, Instant expiresAt) {
 		this.originalUrl = originalUrl;
 		this.title = title;
@@ -197,6 +204,10 @@ public class ShortUrl {
 
 	public long getClickCount() {
 		return clickCount;
+	}
+
+	public boolean isPinned() {
+		return pinned;
 	}
 
 	public long getVersion() {

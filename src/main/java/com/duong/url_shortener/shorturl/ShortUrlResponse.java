@@ -11,6 +11,7 @@ public record ShortUrlResponse(
 		String tag,
 		ShortUrlStatus status,
 		boolean customAlias,
+		boolean pinned,
 		Instant expiresAt,
 		long clickCount,
 		Instant createdAt) {
@@ -29,6 +30,7 @@ public record ShortUrlResponse(
 				shortUrl.getTag(),
 				shortUrl.getStatus(),
 				shortUrl.isCustomAlias(),
+				shortUrl.isPinned(),
 				shortUrl.getExpiresAt(),
 				shortUrl.getClickCount(),
 				shortUrl.getCreatedAt());

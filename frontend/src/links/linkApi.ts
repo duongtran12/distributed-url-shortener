@@ -34,6 +34,13 @@ export function updateShortUrlStatus(id: number, status: 'ACTIVE' | 'DISABLED') 
   })
 }
 
+export function updateShortUrlPin(id: number, pinned: boolean) {
+  return apiRequest<ShortUrl>(`/api/v1/urls/${id}/pin`, {
+    method: 'PATCH',
+    body: JSON.stringify({ pinned }),
+  })
+}
+
 export function updateShortUrl(id: number, input: UpdateShortUrlInput) {
   return apiRequest<ShortUrl>(`/api/v1/urls/${id}`, {
     method: 'PUT',

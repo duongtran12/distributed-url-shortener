@@ -103,6 +103,14 @@ public class ShortUrlController {
 		return shortUrlService.updateStatus(jwt.getClaim("uid"), id, request);
 	}
 
+	@PatchMapping("/{id}/pin")
+	public ShortUrlResponse updatePin(
+			@AuthenticationPrincipal Jwt jwt,
+			@PathVariable @Min(1) Long id,
+			@Valid @RequestBody UpdateShortUrlPinRequest request) {
+		return shortUrlService.updatePin(jwt.getClaim("uid"), id, request);
+	}
+
 	@PutMapping("/{id}")
 	public ShortUrlResponse update(
 			@AuthenticationPrincipal Jwt jwt,
