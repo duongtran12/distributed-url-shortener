@@ -6,12 +6,15 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 
 import javax.imageio.ImageIO;
 
@@ -267,6 +270,41 @@ class ShortUrlManagementIntegrationTest {
 				.andExpect(jsonPath("$.id").value(shortUrl.getId()))
 				.andExpect(jsonPath("$.shortCode").value("details"))
 				.andExpect(jsonPath("$.originalUrl").value("https://example.com/details"));
+	}
+
+	@Test
+	void shouldExportFilteredOwnedUrlsAsSafeCsv() throws Exception {
+		ShortUrl exported = ShortUrl.create(
+				owner, "csvowned", "https://example.com/a,b", "=SUM(1,2)", "reports", false, null);
+		exported.disable();
+		shortUrlRepository.saveAndFlush(exported);
+		shortUrlRepository.saveAndFlush(
+				ShortUrl.create(owner, "csvactive", "https://example.com/active", false, null));
+		ShortUrl foreign = ShortUrl.create(
+				otherUser, "csvforeign", "https://example.com/foreign", "Foreign", "reports", false, null);
+		foreign.disable();
+		shortUrlRepository.saveAndFlush(foreign);
+
+		byte[] content = mockMvc.perform(get("/api/v1/urls/export")
+				.param("tag", "reports")
+				.param("status", "DISABLED")
+				.param("sort", "OLDEST")
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken))
+				.andExpect(status().isOk())
+				.andExpect(content().contentTypeCompatibleWith("text/csv;charset=UTF-8"))
+				.andExpect(header().string(
+						HttpHeaders.CONTENT_DISPOSITION,
+						org.hamcrest.Matchers.containsString("shortwave-links-")))
+				.andReturn().getResponse().getContentAsByteArray();
+
+		assertEquals((byte) 0xEF, content[0]);
+		String csv = new String(content, 3, content.length - 3, StandardCharsets.UTF_8);
+		assertTrue(csv.contains("\"csvowned\""));
+		assertTrue(csv.contains("\"https://example.com/a,b\""));
+		assertTrue(csv.contains("\"'=SUM(1,2)\""));
+		assertFalse(csv.contains("csvactive"));
+		assertFalse(csv.contains("csvforeign"));
+		assertEquals(2, csv.lines().count());
 	}
 
 	@Test

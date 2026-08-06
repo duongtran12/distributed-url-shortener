@@ -9,7 +9,7 @@ import type { AnalyticsOverview } from '../analytics/types'
 import { HealthBadge, type HealthState } from '../components/HealthBadge'
 import { CreateLinkForm } from '../links/CreateLinkForm'
 import { LinkCard } from '../links/LinkCard'
-import { bulkUpdateShortUrls, getShortUrls, type BulkShortUrlAction, type ShortUrlSort } from '../links/linkApi'
+import { bulkUpdateShortUrls, exportShortUrls, getShortUrls, type BulkShortUrlAction, type ShortUrlSort } from '../links/linkApi'
 import type { ShortUrl, ShortUrlPage, ShortUrlStatus } from '../links/types'
 
 interface DashboardHomeProps {
@@ -47,6 +47,7 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
 	const [selectedLinkIds, setSelectedLinkIds] = useState<Set<number>>(() => new Set())
 	const [bulkWorking, setBulkWorking] = useState(false)
 	const [bulkError, setBulkError] = useState('')
+	const [exportingLinks, setExportingLinks] = useState(false)
 
   const loadPage = useCallback(async (page: number) => {
     setLoading(true)
@@ -233,6 +234,31 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
 		}
 	}
 
+	async function exportLinks() {
+		setExportingLinks(true)
+		setError('')
+		try {
+			const { blob, filename } = await exportShortUrls({
+				query: searchQuery || undefined,
+				tag: tagFilter || undefined,
+				status: statusFilter || undefined,
+				sort: linkSort,
+			})
+			const downloadUrl = URL.createObjectURL(blob)
+			const anchor = document.createElement('a')
+			anchor.href = downloadUrl
+			anchor.download = filename
+			document.body.appendChild(anchor)
+			anchor.click()
+			anchor.remove()
+			URL.revokeObjectURL(downloadUrl)
+		} catch (caught: unknown) {
+			setError(caught instanceof ApiClientError ? caught.message : 'Could not export your links.')
+		} finally {
+			setExportingLinks(false)
+		}
+	}
+
   return (
     <main className="dashboard-shell">
       <aside className="dashboard-sidebar">
@@ -291,7 +317,10 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
         <section className="links-section" id="links">
           <div className="section-heading">
             <div><span className="capability-index">ROUTES</span><h2>Your short links</h2></div>
-            <button className="primary-button" type="button" onClick={() => setShowCreate((visible) => !visible)}>{showCreate ? 'Close form' : 'Create link'} <span>{showCreate ? 'x' : '+'}</span></button>
+			<div className="link-heading-actions">
+			  <button className="export-button" type="button" disabled={exportingLinks} onClick={() => void exportLinks()}>{exportingLinks ? 'Exporting...' : 'Export links'}</button>
+			  <button className="primary-button" type="button" onClick={() => setShowCreate((visible) => !visible)}>{showCreate ? 'Close form' : 'Create link'} <span>{showCreate ? 'x' : '+'}</span></button>
+			</div>
           </div>
 
           {showCreate && <CreateLinkForm onCreated={handleCreated} onCancel={() => setShowCreate(false)} />}
