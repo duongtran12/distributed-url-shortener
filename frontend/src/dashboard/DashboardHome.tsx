@@ -9,7 +9,7 @@ import type { AnalyticsOverview } from '../analytics/types'
 import { HealthBadge, type HealthState } from '../components/HealthBadge'
 import { CreateLinkForm } from '../links/CreateLinkForm'
 import { LinkCard } from '../links/LinkCard'
-import { getShortUrls } from '../links/linkApi'
+import { getShortUrls, type ShortUrlSort } from '../links/linkApi'
 import type { ShortUrl, ShortUrlPage, ShortUrlStatus } from '../links/types'
 
 interface DashboardHomeProps {
@@ -41,6 +41,7 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
 	const [searchInput, setSearchInput] = useState('')
 	const [searchQuery, setSearchQuery] = useState('')
 	const [statusFilter, setStatusFilter] = useState<ShortUrlStatus | ''>('')
+	const [linkSort, setLinkSort] = useState<ShortUrlSort>('NEWEST')
 
   const loadPage = useCallback(async (page: number) => {
     setLoading(true)
@@ -49,19 +50,21 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
       setLinks(await getShortUrls(page, 20, {
 		query: searchQuery || undefined,
 		status: statusFilter || undefined,
+		sort: linkSort,
 	  }))
     } catch (caught: unknown) {
       setError(caught instanceof ApiClientError ? caught.message : 'Could not load your links.')
     } finally {
       setLoading(false)
     }
-  }, [searchQuery, statusFilter])
+  }, [searchQuery, statusFilter, linkSort])
 
 	useEffect(() => {
 		let active = true
 		getShortUrls(0, 20, {
 			query: searchQuery || undefined,
 			status: statusFilter || undefined,
+			sort: linkSort,
 		})
 			.then((page) => { if (active) setLinks(page) })
 			.catch((caught: unknown) => {
@@ -69,7 +72,7 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
 			})
 			.finally(() => { if (active) setLoading(false) })
 		return () => { active = false }
-	}, [searchQuery, statusFilter])
+	}, [searchQuery, statusFilter, linkSort])
 
 	useEffect(() => {
 		let active = true
@@ -124,6 +127,12 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
 		setLoading(true)
 		setError('')
 		setStatusFilter(status)
+	}
+
+	function changeLinkSort(sort: ShortUrlSort) {
+		setLoading(true)
+		setError('')
+		setLinkSort(sort)
 	}
 
 	function clearFilters() {
@@ -246,6 +255,14 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
 				<option value="ACTIVE">Active</option>
 				<option value="DISABLED">Disabled</option>
 				<option value="BLOCKED">Blocked</option>
+			  </select>
+			</label>
+			<label className="sort-filter">
+			  <span>Sort by</span>
+			  <select value={linkSort} onChange={(event) => changeLinkSort(event.target.value as ShortUrlSort)}>
+				<option value="NEWEST">Newest</option>
+				<option value="OLDEST">Oldest</option>
+				<option value="MOST_CLICKED">Most clicked</option>
 			  </select>
 			</label>
 			{(searchQuery || statusFilter) && <button className="clear-filters" type="button" onClick={clearFilters}>Clear filters</button>}

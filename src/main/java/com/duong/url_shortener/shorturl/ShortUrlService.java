@@ -8,7 +8,6 @@ import com.duong.url_shortener.user.User;
 import com.duong.url_shortener.user.UserRepository;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -62,12 +61,13 @@ public class ShortUrlService {
 			int page,
 			int size,
 			String query,
-			ShortUrlStatus status) {
+			ShortUrlStatus status,
+			ShortUrlSort sort) {
 		findActiveUser(userId);
 		PageRequest pageRequest = PageRequest.of(
 				page,
 				size,
-				Sort.by(Sort.Direction.DESC, "createdAt"));
+				sort.toSort());
 		Specification<ShortUrl> filters = ownedBy(userId);
 		String normalizedQuery = normalizeSearchQuery(query);
 		if (normalizedQuery != null) {

@@ -15,6 +15,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -80,6 +81,18 @@ public class GlobalExceptionHandler {
 				HttpStatus.BAD_REQUEST,
 				"MALFORMED_REQUEST",
 				"Request body is missing or malformed",
+				request,
+				List.of());
+	}
+
+	@ExceptionHandler(MethodArgumentTypeMismatchException.class)
+	public ResponseEntity<ApiErrorResponse> handleArgumentTypeMismatch(
+			MethodArgumentTypeMismatchException exception,
+			HttpServletRequest request) {
+		return buildResponse(
+				HttpStatus.BAD_REQUEST,
+				"INVALID_REQUEST_PARAMETER",
+				"Request parameter '%s' has an invalid value".formatted(exception.getName()),
 				request,
 				List.of());
 	}

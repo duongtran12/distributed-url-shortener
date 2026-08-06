@@ -153,7 +153,7 @@ h1 em { color: #65e7ae; font-style: normal; font-weight: 700; }
 .top-link-row small { overflow: hidden; color: #5f766b; text-overflow: ellipsis; white-space: nowrap; }
 .top-link-row > span:last-child { color: #77cfa8; font: 11px 'DM Mono', monospace; }
 .links-section { padding-top: 38px; }
-.link-filters { margin-top: 24px; display: grid; grid-template-columns: minmax(260px, 1fr) auto minmax(170px, .35fr) auto; gap: 10px; align-items: end; padding: 16px; border: 1px solid #20382f; background: rgba(9,25,20,.62); }
+.link-filters { margin-top: 24px; display: grid; grid-template-columns: minmax(240px, 1fr) auto minmax(150px, .3fr) minmax(150px, .3fr) auto; gap: 10px; align-items: end; padding: 16px; border: 1px solid #20382f; background: rgba(9,25,20,.62); }
 .link-filters label { display: grid; gap: 7px; color: #71877d; font: 9px 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .1em; }
 .link-filters input, .link-filters select { width: 100%; min-height: 42px; padding: 0 13px; color: #dcebe4; background: #071711; border: 1px solid #294238; border-radius: 4px; outline: none; }
 .link-filters input:focus, .link-filters select:focus { border-color: #51c995; box-shadow: 0 0 0 2px rgba(81,201,149,.1); }
@@ -320,6 +320,7 @@ h1 em { color: #65e7ae; font-style: normal; font-weight: 700; }
 @media (max-width: 720px) {
   .link-filters { grid-template-columns: 1fr auto; }
   .status-filter { grid-column: 1 / 2; }
+  .sort-filter { grid-column: 2 / 3; }
   .section-heading { align-items: flex-end; }
   .section-heading .primary-button { padding: 12px 14px; }
   .link-card { grid-template-columns: 1fr; }

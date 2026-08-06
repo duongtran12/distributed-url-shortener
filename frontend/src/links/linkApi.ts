@@ -1,15 +1,19 @@
 import { apiDownload, apiRequest } from '../auth/authApi'
 import type { CreateShortUrlInput, ShortUrl, ShortUrlPage, ShortUrlStatus, UpdateShortUrlInput } from './types'
 
+export type ShortUrlSort = 'NEWEST' | 'OLDEST' | 'MOST_CLICKED'
+
 export interface ShortUrlFilters {
 	query?: string
 	status?: ShortUrlStatus
+	sort?: ShortUrlSort
 }
 
 export function getShortUrls(page = 0, size = 20, filters: ShortUrlFilters = {}) {
 	const params = new URLSearchParams({ page: String(page), size: String(size) })
 	if (filters.query) params.set('query', filters.query)
 	if (filters.status) params.set('status', filters.status)
+	if (filters.sort) params.set('sort', filters.sort)
 	return apiRequest<ShortUrlPage>(`/api/v1/urls?${params.toString()}`)
 }
 

@@ -1,6 +1,7 @@
 package com.duong.url_shortener.common.exception;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -63,6 +64,14 @@ class GlobalExceptionHandlerTest {
 				.andExpect(jsonPath("$.code").value("SHORT_CODE_CONFLICT"))
 				.andExpect(jsonPath("$.message").value("Short code already exists"))
 				.andExpect(jsonPath("$.fieldErrors").isEmpty());
+	}
+
+	@Test
+	void shouldReturnBadRequestForInvalidEnumParameter() throws Exception {
+		mockMvc.perform(get("/test/enum").param("sort", "POPULAR"))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("INVALID_REQUEST_PARAMETER"))
+				.andExpect(jsonPath("$.message").value("Request parameter 'sort' has an invalid value"));
 	}
 
 }
