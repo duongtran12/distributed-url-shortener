@@ -95,6 +95,29 @@ public class ShortUrlService {
 		return ShortUrlResponse.from(shortUrl, properties.baseUrl());
 	}
 
+	public ShortUrlResponse duplicate(Long userId, Long shortUrlId) {
+		User owner = findActiveUser(userId);
+		ShortUrl source = findOwnedShortUrl(userId, shortUrlId);
+		if (source.getStatus() == ShortUrlStatus.BLOCKED) {
+			throw new ApiException(
+					HttpStatus.CONFLICT,
+					"SHORT_URL_BLOCKED",
+					"A blocked short URL cannot be duplicated by its owner");
+		}
+
+		Instant now = Instant.now();
+		Instant expiresAt = source.getExpiresAt() != null && source.getExpiresAt().isAfter(now)
+				? source.getExpiresAt()
+				: null;
+		ShortUrl duplicate = createWithGeneratedCode(
+				owner,
+				source.getOriginalUrl(),
+				source.getTitle(),
+				source.getTag(),
+				expiresAt);
+		return ShortUrlResponse.from(duplicate, properties.baseUrl());
+	}
+
 	@Transactional
 	public ShortUrlResponse updateStatus(
 			Long userId,
