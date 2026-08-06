@@ -77,6 +77,10 @@ public class User {
 		this.passwordHash = passwordHash;
 	}
 
+	public void updateDisplayName(String displayName) {
+		this.displayName = displayName.strip();
+	}
+
 	public void disable() {
 		this.enabled = false;
 	}

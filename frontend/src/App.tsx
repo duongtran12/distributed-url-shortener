@@ -80,6 +80,10 @@ function App() {
     setAuthView('login')
   }
 
+  function handleProfileUpdated(profile: UserProfile) {
+    setUser(profile)
+  }
+
   function openAuth(view: Exclude<AuthView, null>) {
     setAuthNotice('')
     setAuthView(view)
@@ -100,7 +104,7 @@ function App() {
   }
 
   if (user) {
-    return <DashboardHome user={user} health={health} onLogout={handleLogout} onPasswordChanged={handlePasswordChanged} />
+    return <DashboardHome user={user} health={health} onLogout={handleLogout} onPasswordChanged={handlePasswordChanged} onProfileUpdated={handleProfileUpdated} />
   }
 
   return (

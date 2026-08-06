@@ -103,6 +103,13 @@ export function changePassword(currentPassword: string, newPassword: string): Pr
   })
 }
 
+export function updateProfile(displayName: string): Promise<UserProfile> {
+  return apiRequest<UserProfile>('/api/v1/users/me', {
+    method: 'PATCH',
+    body: JSON.stringify({ displayName }),
+  })
+}
+
 export function getAccessToken() {
   return sessionStorage.getItem(TOKEN_KEY)
 }
