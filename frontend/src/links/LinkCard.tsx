@@ -78,6 +78,7 @@ export function LinkCard({ link, onUpdated, onDeleted, onViewAnalytics, selected
         </div>
         <p className="destination" title={link.originalUrl}>{link.originalUrl}</p>
         <div className="link-meta">
+		  {link.tag && <span className="link-tag">#{link.tag}</span>}
           <span>Created {new Intl.DateTimeFormat('en', { dateStyle: 'medium' }).format(new Date(link.createdAt))}</span>
           {link.expiresAt && <span>Expires {new Intl.DateTimeFormat('en', { dateStyle: 'medium' }).format(new Date(link.expiresAt))}</span>}
           {link.customAlias && <span>Custom alias</span>}

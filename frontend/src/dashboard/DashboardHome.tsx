@@ -41,6 +41,8 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
 	const [searchInput, setSearchInput] = useState('')
 	const [searchQuery, setSearchQuery] = useState('')
 	const [statusFilter, setStatusFilter] = useState<ShortUrlStatus | ''>('')
+	const [tagFilter, setTagFilter] = useState('')
+	const [tagInput, setTagInput] = useState('')
 	const [linkSort, setLinkSort] = useState<ShortUrlSort>('NEWEST')
 	const [selectedLinkIds, setSelectedLinkIds] = useState<Set<number>>(() => new Set())
 	const [bulkWorking, setBulkWorking] = useState(false)
@@ -54,6 +56,7 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
       setLinks(await getShortUrls(page, 20, {
 		query: searchQuery || undefined,
 		status: statusFilter || undefined,
+		tag: tagFilter || undefined,
 		sort: linkSort,
 	  }))
     } catch (caught: unknown) {
@@ -61,13 +64,14 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
     } finally {
       setLoading(false)
     }
-  }, [searchQuery, statusFilter, linkSort])
+  }, [searchQuery, statusFilter, tagFilter, linkSort])
 
 	useEffect(() => {
 		let active = true
 		getShortUrls(0, 20, {
 			query: searchQuery || undefined,
 			status: statusFilter || undefined,
+			tag: tagFilter || undefined,
 			sort: linkSort,
 		})
 			.then((page) => { if (active) setLinks(page) })
@@ -76,7 +80,7 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
 			})
 			.finally(() => { if (active) setLoading(false) })
 		return () => { active = false }
-	}, [searchQuery, statusFilter, linkSort])
+	}, [searchQuery, statusFilter, tagFilter, linkSort])
 
 	useEffect(() => {
 		let active = true
@@ -118,7 +122,8 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
 	function handleSearch(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault()
 		const nextQuery = searchInput.trim()
-		if (nextQuery === searchQuery) {
+		const nextTag = tagInput.trim().toLowerCase()
+		if (nextQuery === searchQuery && nextTag === tagFilter) {
 			void loadPage(0)
 			return
 		}
@@ -126,6 +131,7 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
 		setError('')
 		setSelectedLinkIds(new Set())
 		setSearchQuery(nextQuery)
+		setTagFilter(nextTag)
 	}
 
 	function changeStatusFilter(status: ShortUrlStatus | '') {
@@ -143,7 +149,7 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
 	}
 
 	function clearFilters() {
-		const alreadyClear = !searchInput && !searchQuery && !statusFilter
+		const alreadyClear = !searchInput && !searchQuery && !statusFilter && !tagFilter
 		if (!alreadyClear) {
 			setLoading(true)
 			setError('')
@@ -151,6 +157,8 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
 		setSearchInput('')
 		setSearchQuery('')
 		setStatusFilter('')
+		setTagFilter('')
+		setTagInput('')
 		setSelectedLinkIds(new Set())
 		if (alreadyClear) void loadPage(0)
 	}
@@ -288,6 +296,10 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
 			  <input value={searchInput} onChange={(event) => setSearchInput(event.target.value)} maxLength={200} placeholder="Title, short code, or destination URL" />
 			</label>
 			<button className="filter-submit" type="submit" disabled={loading}>Search</button>
+			<label className="tag-filter">
+			  <span>Tag</span>
+			  <input value={tagInput} onChange={(event) => setTagInput(event.target.value)} maxLength={32} pattern="[A-Za-z0-9_-]*" placeholder="All tags" />
+			</label>
 			<label className="status-filter">
 			  <span>Status</span>
 			  <select value={statusFilter} onChange={(event) => changeStatusFilter(event.target.value as ShortUrlStatus | '')}>
@@ -305,7 +317,7 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
 				<option value="MOST_CLICKED">Most clicked</option>
 			  </select>
 			</label>
-			{(searchQuery || statusFilter) && <button className="clear-filters" type="button" onClick={clearFilters}>Clear filters</button>}
+			{(searchQuery || statusFilter || tagFilter) && <button className="clear-filters" type="button" onClick={clearFilters}>Clear filters</button>}
 		  </form>
           {error && <div className="auth-error links-load-error" role="alert">{error} <button type="button" onClick={() => void loadPage(links.page)}>Try again</button></div>}
 		  {links.content.length > 0 && (
@@ -326,9 +338,9 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
           ) : links.content.length === 0 ? (
             <div className="dashboard-empty">
               <span className="capability-index">EMPTY / 00</span>
-              <h2>{searchQuery || statusFilter ? 'No matching links.' : 'No links yet.'}</h2>
-              <p>{searchQuery || statusFilter ? 'Try a different search term or status.' : 'Create your first short URL. Click events and analytics will appear here automatically.'}</p>
-              {searchQuery || statusFilter
+              <h2>{searchQuery || statusFilter || tagFilter ? 'No matching links.' : 'No links yet.'}</h2>
+              <p>{searchQuery || statusFilter || tagFilter ? 'Try a different search term, tag, or status.' : 'Create your first short URL. Click events and analytics will appear here automatically.'}</p>
+              {searchQuery || statusFilter || tagFilter
 				? <button className="primary-button" type="button" onClick={clearFilters}>Clear filters <span>-&gt;</span></button>
 				: <button className="primary-button" type="button" onClick={() => setShowCreate(true)}>Create a short link <span>-&gt;</span></button>}
             </div>

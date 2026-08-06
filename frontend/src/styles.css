@@ -153,7 +153,7 @@ h1 em { color: #65e7ae; font-style: normal; font-weight: 700; }
 .top-link-row small { overflow: hidden; color: #5f766b; text-overflow: ellipsis; white-space: nowrap; }
 .top-link-row > span:last-child { color: #77cfa8; font: 11px 'DM Mono', monospace; }
 .links-section { padding-top: 38px; }
-.link-filters { margin-top: 24px; display: grid; grid-template-columns: minmax(240px, 1fr) auto minmax(150px, .3fr) minmax(150px, .3fr) auto; gap: 10px; align-items: end; padding: 16px; border: 1px solid #20382f; background: rgba(9,25,20,.62); }
+.link-filters { margin-top: 24px; display: grid; grid-template-columns: minmax(220px, 1fr) auto minmax(125px, .25fr) minmax(140px, .25fr) minmax(140px, .25fr) auto; gap: 10px; align-items: end; padding: 16px; border: 1px solid #20382f; background: rgba(9,25,20,.62); }
 .link-filters label { display: grid; gap: 7px; color: #71877d; font: 9px 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .1em; }
 .link-filters input, .link-filters select { width: 100%; min-height: 42px; padding: 0 13px; color: #dcebe4; background: #071711; border: 1px solid #294238; border-radius: 4px; outline: none; }
 .link-filters input:focus, .link-filters select:focus { border-color: #51c995; box-shadow: 0 0 0 2px rgba(81,201,149,.1); }
@@ -195,6 +195,7 @@ h1 em { color: #65e7ae; font-style: normal; font-weight: 700; }
 .status-pill--blocked { color: #ff907d; border-color: rgba(255,144,125,.3); }
 .destination { max-width: 680px; margin: 8px 0; overflow: hidden; color: #9cafA6; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
 .link-meta { display: flex; flex-wrap: wrap; gap: 13px; color: #5f766b; font: 9px 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .06em; }
+.link-meta .link-tag { color: #60dca8; }
 .click-metric { display: grid; justify-items: end; }
 .click-metric strong { font: 22px 'DM Mono', monospace; }
 .click-metric span { color: #63796f; font: 9px 'DM Mono', monospace; text-transform: uppercase; }
@@ -331,6 +332,7 @@ h1 em { color: #65e7ae; font-style: normal; font-weight: 700; }
 @media (max-width: 720px) {
   .link-filters { grid-template-columns: 1fr auto; }
   .status-filter { grid-column: 1 / 2; }
+  .tag-filter { grid-column: 1 / 2; }
   .sort-filter { grid-column: 2 / 3; }
   .section-heading { align-items: flex-end; }
   .section-heading .primary-button { padding: 12px 14px; }

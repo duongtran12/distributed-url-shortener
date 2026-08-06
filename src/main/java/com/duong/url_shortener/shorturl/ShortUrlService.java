@@ -47,12 +47,13 @@ public class ShortUrlService {
 		User owner = findActiveUser(userId);
 		String originalUrl = inputValidator.normalizeAndValidateOriginalUrl(request.originalUrl());
 		String title = normalizeTitle(request.title());
+		String tag = normalizeTag(request.tag());
 		String customAlias = inputValidator.normalizeAndValidateCustomAlias(request.customAlias());
 		inputValidator.validateExpiration(request.expiresAt(), Instant.now());
 
 		ShortUrl shortUrl = customAlias == null
-				? createWithGeneratedCode(owner, originalUrl, title, request.expiresAt())
-				: createWithCustomAlias(owner, originalUrl, title, customAlias, request.expiresAt());
+				? createWithGeneratedCode(owner, originalUrl, title, tag, request.expiresAt())
+				: createWithCustomAlias(owner, originalUrl, title, tag, customAlias, request.expiresAt());
 
 		return ShortUrlResponse.from(shortUrl, properties.baseUrl());
 	}
@@ -63,6 +64,7 @@ public class ShortUrlService {
 			int page,
 			int size,
 			String query,
+			String tag,
 			ShortUrlStatus status,
 			ShortUrlSort sort) {
 		findActiveUser(userId);
@@ -77,6 +79,10 @@ public class ShortUrlService {
 		}
 		if (status != null) {
 			filters = filters.and(hasStatus(status));
+		}
+		String normalizedTag = normalizeTag(tag);
+		if (normalizedTag != null) {
+			filters = filters.and(hasTag(normalizedTag));
 		}
 
 		return ShortUrlPageResponse.from(shortUrlRepository.findAll(filters, pageRequest), properties.baseUrl());
@@ -130,8 +136,9 @@ public class ShortUrlService {
 
 		String originalUrl = inputValidator.normalizeAndValidateOriginalUrl(request.originalUrl());
 		String title = normalizeTitle(request.title());
+		String tag = normalizeTag(request.tag());
 		inputValidator.validateExpiration(request.expiresAt(), Instant.now());
-		shortUrl.updateDetails(originalUrl, title, request.expiresAt());
+		shortUrl.updateDetails(originalUrl, title, tag, request.expiresAt());
 		redirectCache.evict(shortUrl.getShortCode());
 		return ShortUrlResponse.from(shortUrl, properties.baseUrl());
 	}
@@ -187,10 +194,11 @@ public class ShortUrlService {
 			User owner,
 			String originalUrl,
 			String title,
+			String tag,
 			String customAlias,
 			Instant expiresAt) {
 		try {
-			return persistenceService.create(owner, customAlias, originalUrl, title, true, expiresAt);
+			return persistenceService.create(owner, customAlias, originalUrl, title, tag, true, expiresAt);
 		} catch (DataIntegrityViolationException exception) {
 			throw new ApiException(
 					HttpStatus.CONFLICT,
@@ -203,6 +211,7 @@ public class ShortUrlService {
 			User owner,
 			String originalUrl,
 			String title,
+			String tag,
 			Instant expiresAt) {
 		for (int attempt = 0; attempt < properties.maxGenerationAttempts(); attempt++) {
 			try {
@@ -211,6 +220,7 @@ public class ShortUrlService {
 						shortCodeGenerator.generate(),
 						originalUrl,
 						title,
+						tag,
 						false,
 						expiresAt);
 			} catch (DataIntegrityViolationException exception) {
@@ -251,11 +261,16 @@ public class ShortUrlService {
 		return (root, criteriaQuery, criteriaBuilder) -> criteriaBuilder.or(
 				criteriaBuilder.like(criteriaBuilder.lower(root.get("shortCode")), pattern, '\\'),
 				criteriaBuilder.like(criteriaBuilder.lower(root.get("originalUrl")), pattern, '\\'),
-				criteriaBuilder.like(criteriaBuilder.lower(root.get("title")), pattern, '\\'));
+				criteriaBuilder.like(criteriaBuilder.lower(root.get("title")), pattern, '\\'),
+				criteriaBuilder.like(criteriaBuilder.lower(root.get("tag")), pattern, '\\'));
 	}
 
 	private Specification<ShortUrl> hasStatus(ShortUrlStatus status) {
 		return (root, criteriaQuery, criteriaBuilder) -> criteriaBuilder.equal(root.get("status"), status);
+	}
+
+	private Specification<ShortUrl> hasTag(String tag) {
+		return (root, criteriaQuery, criteriaBuilder) -> criteriaBuilder.equal(root.get("tag"), tag);
 	}
 
 	private String normalizeSearchQuery(String query) {
@@ -276,5 +291,12 @@ public class ShortUrlService {
 			return null;
 		}
 		return title.trim();
+	}
+
+	private String normalizeTag(String tag) {
+		if (tag == null || tag.isBlank()) {
+			return null;
+		}
+		return tag.trim().toLowerCase(Locale.ROOT);
 	}
 }

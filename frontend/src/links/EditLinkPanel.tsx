@@ -50,6 +50,7 @@ export function EditLinkPanel({ link, onClose, onUpdated }: EditLinkPanelProps) 
       const updated = await updateShortUrl(link.id, {
         originalUrl: String(form.get('originalUrl') || '').trim(),
 		title: String(form.get('title') || '').trim() || null,
+		tag: String(form.get('tag') || '').trim() || null,
         expiresAt: localExpiration ? new Date(localExpiration).toISOString() : null,
       })
       onUpdated(updated)
@@ -76,6 +77,7 @@ export function EditLinkPanel({ link, onClose, onUpdated }: EditLinkPanelProps) 
 
         <form className="edit-link-form" onSubmit={handleSubmit}>
           <label>Link title <span>Optional - a recognizable name for this route</span><input name="title" type="text" defaultValue={link.title ?? ''} maxLength={120} />{fieldErrors.title && <small>{fieldErrors.title}</small>}</label>
+		  <label>Tag <span>Optional - use letters, numbers, dashes, or underscores</span><input name="tag" type="text" defaultValue={link.tag ?? ''} maxLength={32} pattern="[A-Za-z0-9][A-Za-z0-9_-]*" />{fieldErrors.tag && <small>{fieldErrors.tag}</small>}</label>
           <label>Destination URL<input name="originalUrl" type="url" defaultValue={link.originalUrl} maxLength={2048} required />{fieldErrors.originalUrl && <small>{fieldErrors.originalUrl}</small>}</label>
           <label>Expiration <span>Optional - leave empty for no expiration</span><input name="expiresAt" type="datetime-local" defaultValue={toLocalDateTime(link.expiresAt)} />{fieldErrors.expiresAt && <small>{fieldErrors.expiresAt}</small>}</label>
           {link.status !== 'ACTIVE' && <div className="edit-link-note">Saving does not reactivate this link. Enable it separately after updating the route.</div>}
