@@ -2,6 +2,8 @@ package com.duong.url_shortener.shorturl;
 
 import java.time.Instant;
 import java.util.Locale;
+import java.util.LinkedHashSet;
+import java.util.List;
 
 import com.duong.url_shortener.common.exception.ApiException;
 import com.duong.url_shortener.user.User;
@@ -140,6 +142,37 @@ public class ShortUrlService {
 		ShortUrl shortUrl = findOwnedShortUrl(userId, shortUrlId);
 		shortUrlRepository.delete(shortUrl);
 		redirectCache.evict(shortUrl.getShortCode());
+	}
+
+	@Transactional
+	public BulkShortUrlResponse bulkUpdate(Long userId, BulkShortUrlRequest request) {
+		findActiveUser(userId);
+		List<Long> ids = List.copyOf(new LinkedHashSet<>(request.ids()));
+		List<ShortUrl> shortUrls = shortUrlRepository.findAllByIdInAndOwnerId(ids, userId);
+		if (shortUrls.size() != ids.size()) {
+			throw new ApiException(
+					HttpStatus.NOT_FOUND,
+					"SHORT_URL_NOT_FOUND",
+					"One or more short URLs were not found");
+		}
+
+		if (request.action() != BulkShortUrlRequest.Action.DELETE
+				&& shortUrls.stream().anyMatch(shortUrl -> shortUrl.getStatus() == ShortUrlStatus.BLOCKED)) {
+			throw new ApiException(
+					HttpStatus.CONFLICT,
+					"SHORT_URL_BLOCKED",
+					"A blocked short URL cannot be modified by its owner");
+		}
+
+		for (ShortUrl shortUrl : shortUrls) {
+			switch (request.action()) {
+				case ENABLE -> shortUrl.enable();
+				case DISABLE -> shortUrl.disable();
+				case DELETE -> shortUrlRepository.delete(shortUrl);
+			}
+			redirectCache.evict(shortUrl.getShortCode());
+		}
+		return new BulkShortUrlResponse(request.action(), shortUrls.size());
 	}
 
 	private ShortUrl findOwnedShortUrl(Long userId, Long shortUrlId) {

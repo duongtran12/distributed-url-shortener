@@ -9,7 +9,7 @@ import type { AnalyticsOverview } from '../analytics/types'
 import { HealthBadge, type HealthState } from '../components/HealthBadge'
 import { CreateLinkForm } from '../links/CreateLinkForm'
 import { LinkCard } from '../links/LinkCard'
-import { getShortUrls, type ShortUrlSort } from '../links/linkApi'
+import { bulkUpdateShortUrls, getShortUrls, type BulkShortUrlAction, type ShortUrlSort } from '../links/linkApi'
 import type { ShortUrl, ShortUrlPage, ShortUrlStatus } from '../links/types'
 
 interface DashboardHomeProps {
@@ -42,10 +42,14 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
 	const [searchQuery, setSearchQuery] = useState('')
 	const [statusFilter, setStatusFilter] = useState<ShortUrlStatus | ''>('')
 	const [linkSort, setLinkSort] = useState<ShortUrlSort>('NEWEST')
+	const [selectedLinkIds, setSelectedLinkIds] = useState<Set<number>>(() => new Set())
+	const [bulkWorking, setBulkWorking] = useState(false)
+	const [bulkError, setBulkError] = useState('')
 
   const loadPage = useCallback(async (page: number) => {
     setLoading(true)
     setError('')
+	setSelectedLinkIds(new Set())
     try {
       setLinks(await getShortUrls(page, 20, {
 		query: searchQuery || undefined,
@@ -120,18 +124,21 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
 		}
 		setLoading(true)
 		setError('')
+		setSelectedLinkIds(new Set())
 		setSearchQuery(nextQuery)
 	}
 
 	function changeStatusFilter(status: ShortUrlStatus | '') {
 		setLoading(true)
 		setError('')
+		setSelectedLinkIds(new Set())
 		setStatusFilter(status)
 	}
 
 	function changeLinkSort(sort: ShortUrlSort) {
 		setLoading(true)
 		setError('')
+		setSelectedLinkIds(new Set())
 		setLinkSort(sort)
 	}
 
@@ -144,6 +151,7 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
 		setSearchInput('')
 		setSearchQuery('')
 		setStatusFilter('')
+		setSelectedLinkIds(new Set())
 		if (alreadyClear) void loadPage(0)
 	}
 
@@ -151,6 +159,38 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
 		setAnalyticsLoading(true)
 		setAnalyticsError('')
 		setAnalyticsRefresh((current) => current + 1)
+	}
+
+	function changeLinkSelection(id: number, selected: boolean) {
+		setSelectedLinkIds((current) => {
+			const next = new Set(current)
+			if (selected) next.add(id)
+			else next.delete(id)
+			return next
+		})
+	}
+
+	function toggleCurrentPageSelection() {
+		const allSelected = links.content.every((link) => selectedLinkIds.has(link.id))
+		setSelectedLinkIds(allSelected ? new Set() : new Set(links.content.map((link) => link.id)))
+	}
+
+	async function runBulkAction(action: BulkShortUrlAction) {
+		const ids = [...selectedLinkIds]
+		if (ids.length === 0) return
+		if (action === 'DELETE' && !window.confirm(`Delete ${ids.length} selected links? This cannot be undone.`)) return
+		setBulkWorking(true)
+		setBulkError('')
+		try {
+			await bulkUpdateShortUrls(ids, action)
+			setSelectedLinkIds(new Set())
+			await loadPage(action === 'DELETE' && links.content.length === ids.length && links.page > 0 ? links.page - 1 : links.page)
+			refreshAnalytics()
+		} catch (caught: unknown) {
+			setBulkError(caught instanceof ApiClientError ? caught.message : 'Could not update the selected links.')
+		} finally {
+			setBulkWorking(false)
+		}
 	}
 
 	function changeAnalyticsRange(days: number) {
@@ -268,6 +308,18 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
 			{(searchQuery || statusFilter) && <button className="clear-filters" type="button" onClick={clearFilters}>Clear filters</button>}
 		  </form>
           {error && <div className="auth-error links-load-error" role="alert">{error} <button type="button" onClick={() => void loadPage(links.page)}>Try again</button></div>}
+		  {links.content.length > 0 && (
+			<div className="bulk-toolbar">
+			  <label><input type="checkbox" checked={links.content.every((link) => selectedLinkIds.has(link.id))} onChange={toggleCurrentPageSelection} /><span>Select page</span></label>
+			  <strong>{selectedLinkIds.size} selected</strong>
+			  {selectedLinkIds.size > 0 && <div className="bulk-actions">
+				<button type="button" disabled={bulkWorking} onClick={() => void runBulkAction('ENABLE')}>Enable</button>
+				<button type="button" disabled={bulkWorking} onClick={() => void runBulkAction('DISABLE')}>Disable</button>
+				<button className="danger-action" type="button" disabled={bulkWorking} onClick={() => void runBulkAction('DELETE')}>Delete</button>
+			  </div>}
+			</div>
+		  )}
+		  {bulkError && <div className="auth-error links-load-error" role="alert">{bulkError}</div>}
 
           {loading ? (
             <div className="links-state"><span className="health-dot" /> Loading secure links...</div>
@@ -282,7 +334,7 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
             </div>
           ) : (
             <div className="links-list">
-			  {links.content.map((link) => <LinkCard key={link.id} link={link} onUpdated={handleUpdated} onDeleted={handleDeleted} onViewAnalytics={setSelectedAnalyticsLink} />)}
+			  {links.content.map((link) => <LinkCard key={link.id} link={link} selected={selectedLinkIds.has(link.id)} onSelectionChanged={changeLinkSelection} onUpdated={handleUpdated} onDeleted={handleDeleted} onViewAnalytics={setSelectedAnalyticsLink} />)}
             </div>
           )}
 

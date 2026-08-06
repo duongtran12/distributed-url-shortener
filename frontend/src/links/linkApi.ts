@@ -2,6 +2,7 @@ import { apiDownload, apiRequest } from '../auth/authApi'
 import type { CreateShortUrlInput, ShortUrl, ShortUrlPage, ShortUrlStatus, UpdateShortUrlInput } from './types'
 
 export type ShortUrlSort = 'NEWEST' | 'OLDEST' | 'MOST_CLICKED'
+export type BulkShortUrlAction = 'ENABLE' | 'DISABLE' | 'DELETE'
 
 export interface ShortUrlFilters {
 	query?: string
@@ -40,6 +41,13 @@ export function updateShortUrl(id: number, input: UpdateShortUrlInput) {
 
 export function deleteShortUrl(id: number) {
   return apiRequest<void>(`/api/v1/urls/${id}`, { method: 'DELETE' })
+}
+
+export function bulkUpdateShortUrls(ids: number[], action: BulkShortUrlAction) {
+  return apiRequest<{ action: BulkShortUrlAction, affected: number }>('/api/v1/urls/bulk', {
+    method: 'POST',
+    body: JSON.stringify({ ids, action }),
+  })
 }
 
 export function getShortUrlQrCode(id: number) {

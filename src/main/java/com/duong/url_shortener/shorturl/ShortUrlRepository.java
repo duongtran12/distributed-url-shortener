@@ -2,6 +2,7 @@ package com.duong.url_shortener.shorturl;
 
 import java.time.Instant;
 import java.util.Optional;
+import java.util.List;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -16,6 +17,8 @@ public interface ShortUrlRepository extends JpaRepository<ShortUrl, Long>, JpaSp
 	Optional<ShortUrl> findByShortCode(String shortCode);
 
 	Optional<ShortUrl> findByIdAndOwnerId(Long id, Long ownerId);
+
+	List<ShortUrl> findAllByIdInAndOwnerId(List<Long> ids, Long ownerId);
 
 	Page<ShortUrl> findAllByOwnerId(Long ownerId, Pageable pageable);
 
