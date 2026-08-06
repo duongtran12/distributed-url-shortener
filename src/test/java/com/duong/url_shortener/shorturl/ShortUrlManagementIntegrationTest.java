@@ -99,21 +99,34 @@ class ShortUrlManagementIntegrationTest {
 	@Test
 	void shouldSearchAndFilterOnlyOwnedUrls() throws Exception {
 		shortUrlRepository.saveAndFlush(
-				ShortUrl.create(owner, "SpringDocs", "https://docs.spring.io/reference", false, null));
+				ShortUrl.create(
+						owner,
+						"ownedtitle",
+						"https://docs.example.com/reference",
+						"Spring Handbook",
+						false,
+						null));
 		ShortUrl disabled = ShortUrl.create(
 				owner, "archive1", "https://example.com/spring-archive", false, null);
 		disabled.disable();
 		shortUrlRepository.saveAndFlush(disabled);
 		shortUrlRepository.saveAndFlush(
-				ShortUrl.create(otherUser, "spring-private", "https://example.com/spring", false, null));
+				ShortUrl.create(
+						otherUser,
+						"private1",
+						"https://example.com/private",
+						"Spring Handbook Private",
+						false,
+						null));
 
 		mockMvc.perform(get("/api/v1/urls")
-				.param("query", "SPRING")
+				.param("query", "HANDBOOK")
 				.param("status", "ACTIVE")
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.content.length()").value(1))
-				.andExpect(jsonPath("$.content[0].shortCode").value("SpringDocs"))
+				.andExpect(jsonPath("$.content[0].shortCode").value("ownedtitle"))
+				.andExpect(jsonPath("$.content[0].title").value("Spring Handbook"))
 				.andExpect(jsonPath("$.totalElements").value(1));
 
 		mockMvc.perform(get("/api/v1/urls")
@@ -252,7 +265,7 @@ class ShortUrlManagementIntegrationTest {
 	}
 
 	@Test
-	void shouldUpdateOwnedUrlDestinationAndExpiration() throws Exception {
+	void shouldUpdateOwnedUrlDetailsAndClearTitle() throws Exception {
 		ShortUrl shortUrl = shortUrlRepository.saveAndFlush(
 				ShortUrl.create(owner, "editable", "https://example.com/old", false, null));
 
@@ -262,13 +275,28 @@ class ShortUrlManagementIntegrationTest {
 				.content("""
 						{
 						  "originalUrl": "https://example.com/new",
+						  "title": "  Updated campaign  ",
 						  "expiresAt": "2099-12-31T23:59:59Z"
 						}
 						"""))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.shortCode").value("editable"))
 				.andExpect(jsonPath("$.originalUrl").value("https://example.com/new"))
+				.andExpect(jsonPath("$.title").value("Updated campaign"))
 				.andExpect(jsonPath("$.expiresAt").value("2099-12-31T23:59:59Z"));
+
+		mockMvc.perform(put("/api/v1/urls/{id}", shortUrl.getId())
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{
+						  "originalUrl": "https://example.com/new",
+						  "title": "",
+						  "expiresAt": "2099-12-31T23:59:59Z"
+						}
+						"""))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.title").doesNotExist());
 
 		mockMvc.perform(get("/{shortCode}", "editable"))
 				.andExpect(status().isFound())

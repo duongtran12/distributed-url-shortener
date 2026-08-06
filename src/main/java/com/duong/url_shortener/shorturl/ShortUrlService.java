@@ -45,12 +45,13 @@ public class ShortUrlService {
 	public ShortUrlResponse create(Long userId, CreateShortUrlRequest request) {
 		User owner = findActiveUser(userId);
 		String originalUrl = inputValidator.normalizeAndValidateOriginalUrl(request.originalUrl());
+		String title = normalizeTitle(request.title());
 		String customAlias = inputValidator.normalizeAndValidateCustomAlias(request.customAlias());
 		inputValidator.validateExpiration(request.expiresAt(), Instant.now());
 
 		ShortUrl shortUrl = customAlias == null
-				? createWithGeneratedCode(owner, originalUrl, request.expiresAt())
-				: createWithCustomAlias(owner, originalUrl, customAlias, request.expiresAt());
+				? createWithGeneratedCode(owner, originalUrl, title, request.expiresAt())
+				: createWithCustomAlias(owner, originalUrl, title, customAlias, request.expiresAt());
 
 		return ShortUrlResponse.from(shortUrl, properties.baseUrl());
 	}
@@ -126,8 +127,9 @@ public class ShortUrlService {
 		}
 
 		String originalUrl = inputValidator.normalizeAndValidateOriginalUrl(request.originalUrl());
+		String title = normalizeTitle(request.title());
 		inputValidator.validateExpiration(request.expiresAt(), Instant.now());
-		shortUrl.updateDestination(originalUrl, request.expiresAt());
+		shortUrl.updateDetails(originalUrl, title, request.expiresAt());
 		redirectCache.evict(shortUrl.getShortCode());
 		return ShortUrlResponse.from(shortUrl, properties.baseUrl());
 	}
@@ -151,10 +153,11 @@ public class ShortUrlService {
 	private ShortUrl createWithCustomAlias(
 			User owner,
 			String originalUrl,
+			String title,
 			String customAlias,
 			Instant expiresAt) {
 		try {
-			return persistenceService.create(owner, customAlias, originalUrl, true, expiresAt);
+			return persistenceService.create(owner, customAlias, originalUrl, title, true, expiresAt);
 		} catch (DataIntegrityViolationException exception) {
 			throw new ApiException(
 					HttpStatus.CONFLICT,
@@ -163,13 +166,18 @@ public class ShortUrlService {
 		}
 	}
 
-	private ShortUrl createWithGeneratedCode(User owner, String originalUrl, Instant expiresAt) {
+	private ShortUrl createWithGeneratedCode(
+			User owner,
+			String originalUrl,
+			String title,
+			Instant expiresAt) {
 		for (int attempt = 0; attempt < properties.maxGenerationAttempts(); attempt++) {
 			try {
 				return persistenceService.create(
 						owner,
 						shortCodeGenerator.generate(),
 						originalUrl,
+						title,
 						false,
 						expiresAt);
 			} catch (DataIntegrityViolationException exception) {
@@ -209,7 +217,8 @@ public class ShortUrlService {
 		String pattern = "%" + escapeLikePattern(query) + "%";
 		return (root, criteriaQuery, criteriaBuilder) -> criteriaBuilder.or(
 				criteriaBuilder.like(criteriaBuilder.lower(root.get("shortCode")), pattern, '\\'),
-				criteriaBuilder.like(criteriaBuilder.lower(root.get("originalUrl")), pattern, '\\'));
+				criteriaBuilder.like(criteriaBuilder.lower(root.get("originalUrl")), pattern, '\\'),
+				criteriaBuilder.like(criteriaBuilder.lower(root.get("title")), pattern, '\\'));
 	}
 
 	private Specification<ShortUrl> hasStatus(ShortUrlStatus status) {
@@ -227,5 +236,12 @@ public class ShortUrlService {
 		return query.replace("\\", "\\\\")
 				.replace("%", "\\%")
 				.replace("_", "\\_");
+	}
+
+	private String normalizeTitle(String title) {
+		if (title == null || title.isBlank()) {
+			return null;
+		}
+		return title.trim();
 	}
 }

@@ -65,6 +65,7 @@ export function LinkCard({ link, onUpdated, onDeleted, onViewAnalytics }: LinkCa
   return (
     <article className="link-card">
       <div className="link-card-main">
+		{link.title && <h3 className="link-display-title">{link.title}</h3>}
         <div className="link-title-row">
           <a href={link.shortUrl} target="_blank" rel="noreferrer">/{link.shortCode}</a>
           <span className={`status-pill status-pill--${displayStatus.toLowerCase()}`}>{displayStatus}</span>

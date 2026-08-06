@@ -20,11 +20,13 @@ export function CreateLinkForm({ onCreated, onCancel }: CreateLinkFormProps) {
     setFieldErrors({})
     const form = new FormData(event.currentTarget)
     const customAlias = String(form.get('customAlias') || '').trim()
+	const title = String(form.get('title') || '').trim()
     const localExpiration = String(form.get('expiresAt') || '')
 
     try {
       const created = await createShortUrl({
         originalUrl: String(form.get('originalUrl') || '').trim(),
+		...(title ? { title } : {}),
         ...(customAlias ? { customAlias } : {}),
         ...(localExpiration ? { expiresAt: new Date(localExpiration).toISOString() } : {}),
       })
@@ -47,6 +49,7 @@ export function CreateLinkForm({ onCreated, onCancel }: CreateLinkFormProps) {
         <div><span className="capability-index">NEW LINK</span><h2>Shorten a destination</h2></div>
         <button className="icon-button" type="button" onClick={onCancel} aria-label="Close form">x</button>
       </div>
+	  <label className="wide-field">Link title <span>Optional</span><input name="title" type="text" placeholder="AWS production console" maxLength={120} />{fieldErrors.title && <small>{fieldErrors.title}</small>}</label>
       <label className="wide-field">Destination URL<input name="originalUrl" type="url" placeholder="https://example.com/a-very-long-path" maxLength={2048} required />{fieldErrors.originalUrl && <small>{fieldErrors.originalUrl}</small>}</label>
       <div className="form-grid">
         <label>Custom alias <span>Optional</span><input name="customAlias" type="text" placeholder="summer-launch" minLength={4} maxLength={32} pattern="[A-Za-z0-9_-]+" />{fieldErrors.customAlias && <small>{fieldErrors.customAlias}</small>}</label>

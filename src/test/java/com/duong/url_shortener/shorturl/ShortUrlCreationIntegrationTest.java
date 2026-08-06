@@ -62,6 +62,7 @@ class ShortUrlCreationIntegrationTest {
 				.content("""
 						{
 						  "originalUrl": "https://example.com/long/path",
+						  "title": "  Product launch  ",
 						  "expiresAt": "2099-12-31T23:59:59Z"
 						}
 						"""))
@@ -72,6 +73,7 @@ class ShortUrlCreationIntegrationTest {
 				.andExpect(jsonPath("$.shortUrl").value(
 						org.hamcrest.Matchers.startsWith("http://localhost:8080/")))
 				.andExpect(jsonPath("$.originalUrl").value("https://example.com/long/path"))
+				.andExpect(jsonPath("$.title").value("Product launch"))
 				.andExpect(jsonPath("$.status").value("ACTIVE"))
 				.andExpect(jsonPath("$.customAlias").value(false));
 	}

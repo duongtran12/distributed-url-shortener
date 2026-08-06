@@ -19,9 +19,10 @@ public class ShortUrlPersistenceService {
 			User owner,
 			String shortCode,
 			String originalUrl,
+			String title,
 			boolean customAlias,
 			java.time.Instant expiresAt) {
 		return shortUrlRepository.saveAndFlush(
-				ShortUrl.create(owner, shortCode, originalUrl, customAlias, expiresAt));
+				ShortUrl.create(owner, shortCode, originalUrl, title, customAlias, expiresAt));
 	}
 }

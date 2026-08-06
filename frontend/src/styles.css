@@ -176,6 +176,7 @@ h1 em { color: #65e7ae; font-style: normal; font-weight: 700; }
 .link-card { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 90px auto; gap: 22px; align-items: center; padding: 20px 21px; background: rgba(13,30,24,.72); border: 1px solid #223c31; border-radius: 8px; transition: border-color .2s ease, transform .2s ease, background .2s ease; }
 .link-card:hover { background: rgba(16,36,29,.86); border-color: #3c6655; transform: translateY(-1px); }
 .link-title-row { display: flex; align-items: center; gap: 11px; }
+.link-display-title { margin: 0 0 7px; overflow: hidden; color: #dcebe4; text-overflow: ellipsis; white-space: nowrap; font-size: 16px; font-weight: 650; }
 .link-title-row a { color: #5de5ac; text-decoration: none; font: 16px 'DM Mono', monospace; }
 .status-pill { padding: 4px 7px; color: #8ca097; background: rgba(140,160,151,.08); border: 1px solid #334a41; font: 8px 'DM Mono', monospace; letter-spacing: .08em; }
 .status-pill--active { color: #65e7ae; border-color: rgba(101,231,174,.3); }
