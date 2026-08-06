@@ -224,6 +224,39 @@ class ShortUrlManagementIntegrationTest {
 	}
 
 	@Test
+	void shouldPinOwnedUrlAboveTheRequestedSortOrder() throws Exception {
+		ShortUrl pinned = shortUrlRepository.saveAndFlush(
+				ShortUrl.create(owner, "pinfirst", "https://example.com/pinned", false, null));
+		ShortUrl popular = shortUrlRepository.saveAndFlush(
+				ShortUrl.create(owner, "popular", "https://example.com/popular", false, null));
+		ShortUrl foreign = shortUrlRepository.saveAndFlush(
+				ShortUrl.create(otherUser, "foreignpin", "https://example.com/foreign", false, null));
+		setClickCount(pinned.getId(), 1);
+		setClickCount(popular.getId(), 100);
+
+		updatePin(pinned.getId(), true)
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.pinned").value(true));
+
+		mockMvc.perform(get("/api/v1/urls")
+				.param("sort", "MOST_CLICKED")
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.content[0].shortCode").value("pinfirst"))
+				.andExpect(jsonPath("$.content[1].shortCode").value("popular"));
+
+		updatePin(foreign.getId(), true)
+				.andExpect(status().isNotFound())
+				.andExpect(jsonPath("$.code").value("SHORT_URL_NOT_FOUND"));
+
+		mockMvc.perform(patch("/api/v1/urls/{id}/pin", pinned.getId())
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{}"))
+				.andExpect(status().isBadRequest());
+	}
+
+	@Test
 	void shouldReturnOwnedUrlDetails() throws Exception {
 		ShortUrl shortUrl = shortUrlRepository.saveAndFlush(
 				ShortUrl.create(owner, "details", "https://example.com/details", true, null));
@@ -535,6 +568,17 @@ class ShortUrlManagementIntegrationTest {
 				.content("""
 						{"status": "%s"}
 						""".formatted(newStatus)));
+	}
+
+	private org.springframework.test.web.servlet.ResultActions updatePin(
+			Long id,
+			boolean pinned) throws Exception {
+		return mockMvc.perform(patch("/api/v1/urls/{id}/pin", id)
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{"pinned": %s}
+						""".formatted(pinned)));
 	}
 
 	private void setClickCount(Long id, long clicks) {

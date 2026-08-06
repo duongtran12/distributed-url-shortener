@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { ApiClientError } from '../auth/authApi'
-import { deleteShortUrl, duplicateShortUrl, updateShortUrlStatus } from './linkApi'
+import { deleteShortUrl, duplicateShortUrl, updateShortUrlPin, updateShortUrlStatus } from './linkApi'
 import { EditLinkPanel } from './EditLinkPanel'
 import { QrCodePanel } from './QrCodePanel'
 import type { ShortUrl } from './types'
@@ -74,11 +74,23 @@ export function LinkCard({ link, onUpdated, onDeleted, onViewAnalytics, selected
     }
   }
 
+  async function togglePin() {
+    setWorking(true)
+    setError('')
+    try {
+      onUpdated(await updateShortUrlPin(link.id, !link.pinned))
+    } catch (caught: unknown) {
+      setError(caught instanceof ApiClientError ? caught.message : 'Could not update this pin.')
+    } finally {
+      setWorking(false)
+    }
+  }
+
 	const expired = link.expiresAt ? new Date(link.expiresAt).getTime() <= renderedAt : false
   const displayStatus = expired ? 'EXPIRED' : link.status
 
   return (
-    <article className={`link-card ${selected ? 'link-card--selected' : ''}`}>
+    <article className={`link-card ${selected ? 'link-card--selected' : ''} ${link.pinned ? 'link-card--pinned' : ''}`}>
       <label className="link-selector" title={`Select /${link.shortCode}`}>
         <input type="checkbox" checked={selected} onChange={(event) => onSelectionChanged(link.id, event.target.checked)} />
         <span />
@@ -88,6 +100,7 @@ export function LinkCard({ link, onUpdated, onDeleted, onViewAnalytics, selected
         <div className="link-title-row">
           <a href={link.shortUrl} target="_blank" rel="noreferrer">/{link.shortCode}</a>
           <span className={`status-pill status-pill--${displayStatus.toLowerCase()}`}>{displayStatus}</span>
+		  {link.pinned && <span className="pin-indicator">PINNED</span>}
         </div>
         <p className="destination" title={link.originalUrl}>{link.originalUrl}</p>
         <div className="link-meta">
@@ -99,6 +112,7 @@ export function LinkCard({ link, onUpdated, onDeleted, onViewAnalytics, selected
       </div>
       <div className="click-metric"><strong>{link.clickCount.toLocaleString()}</strong><span>clicks</span></div>
       <div className="link-actions">
+		<button type="button" onClick={togglePin} disabled={working}>{link.pinned ? 'Unpin' : 'Pin'}</button>
         <button type="button" onClick={() => onViewAnalytics(link)}>Analytics</button>
 		<button type="button" onClick={() => setShowQrCode(true)}>QR</button>
         {link.status !== 'BLOCKED' && <button type="button" onClick={() => setEditing(true)}>Edit</button>}

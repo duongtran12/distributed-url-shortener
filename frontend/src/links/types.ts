@@ -9,6 +9,7 @@ export interface ShortUrl {
   tag: string | null
   status: ShortUrlStatus
   customAlias: boolean
+  pinned: boolean
   expiresAt: string | null
   clickCount: number
   createdAt: string

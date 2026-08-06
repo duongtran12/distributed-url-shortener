@@ -8,7 +8,7 @@ public enum ShortUrlSort {
 	MOST_CLICKED;
 
 	Sort toSort() {
-		return switch (this) {
+		Sort requestedSort = switch (this) {
 			case NEWEST -> Sort.by(
 					Sort.Order.desc("createdAt"),
 					Sort.Order.desc("id"));
@@ -20,5 +20,6 @@ public enum ShortUrlSort {
 					Sort.Order.desc("createdAt"),
 					Sort.Order.desc("id"));
 		};
+		return Sort.by(Sort.Order.desc("pinned")).and(requestedSort);
 	}
 }
