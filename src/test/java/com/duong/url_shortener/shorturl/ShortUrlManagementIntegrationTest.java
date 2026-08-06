@@ -4,6 +4,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -405,6 +406,53 @@ class ShortUrlManagementIntegrationTest {
 
 		mockMvc.perform(get("/{shortCode}", "foreign4"))
 				.andExpect(status().isFound());
+	}
+
+	@Test
+	void shouldUpdateAndDeleteOwnedUrlsInBulk() throws Exception {
+		ShortUrl first = shortUrlRepository.saveAndFlush(
+				ShortUrl.create(owner, "bulkone", "https://example.com/one", false, null));
+		ShortUrl second = shortUrlRepository.saveAndFlush(
+				ShortUrl.create(owner, "bulktwo", "https://example.com/two", false, null));
+
+		bulkRequest(first.getId(), second.getId(), "DISABLE")
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.action").value("DISABLE"))
+				.andExpect(jsonPath("$.affected").value(2));
+		assertEquals(ShortUrlStatus.DISABLED, shortUrlRepository.findById(first.getId()).orElseThrow().getStatus());
+		assertEquals(ShortUrlStatus.DISABLED, shortUrlRepository.findById(second.getId()).orElseThrow().getStatus());
+
+		bulkRequest(first.getId(), second.getId(), "DELETE")
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.affected").value(2));
+		assertEquals(0, shortUrlRepository.count());
+	}
+
+	@Test
+	void shouldRejectBulkRequestAtomicallyWhenAUrlIsNotOwned() throws Exception {
+		ShortUrl owned = shortUrlRepository.saveAndFlush(
+				ShortUrl.create(owner, "bulkowned", "https://example.com/owned", false, null));
+		ShortUrl foreign = shortUrlRepository.saveAndFlush(
+				ShortUrl.create(otherUser, "bulkforeign", "https://example.com/foreign", false, null));
+
+		bulkRequest(owned.getId(), foreign.getId(), "DISABLE")
+				.andExpect(status().isNotFound())
+				.andExpect(jsonPath("$.code").value("SHORT_URL_NOT_FOUND"));
+
+		assertEquals(ShortUrlStatus.ACTIVE, shortUrlRepository.findById(owned.getId()).orElseThrow().getStatus());
+		assertEquals(ShortUrlStatus.ACTIVE, shortUrlRepository.findById(foreign.getId()).orElseThrow().getStatus());
+	}
+
+	private org.springframework.test.web.servlet.ResultActions bulkRequest(
+			Long firstId,
+			Long secondId,
+			String action) throws Exception {
+		return mockMvc.perform(post("/api/v1/urls/bulk")
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{"ids": [%d, %d], "action": "%s"}
+						""".formatted(firstId, secondId, action)));
 	}
 
 	private org.springframework.test.web.servlet.ResultActions updateStatus(

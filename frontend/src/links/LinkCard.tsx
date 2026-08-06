@@ -10,9 +10,11 @@ interface LinkCardProps {
   onUpdated: (link: ShortUrl) => void
   onDeleted: (id: number) => void
   onViewAnalytics: (link: ShortUrl) => void
+  selected: boolean
+  onSelectionChanged: (id: number, selected: boolean) => void
 }
 
-export function LinkCard({ link, onUpdated, onDeleted, onViewAnalytics }: LinkCardProps) {
+export function LinkCard({ link, onUpdated, onDeleted, onViewAnalytics, selected, onSelectionChanged }: LinkCardProps) {
 	const [working, setWorking] = useState(false)
 	const [copied, setCopied] = useState(false)
 	const [error, setError] = useState('')
@@ -63,7 +65,11 @@ export function LinkCard({ link, onUpdated, onDeleted, onViewAnalytics }: LinkCa
   const displayStatus = expired ? 'EXPIRED' : link.status
 
   return (
-    <article className="link-card">
+    <article className={`link-card ${selected ? 'link-card--selected' : ''}`}>
+      <label className="link-selector" title={`Select /${link.shortCode}`}>
+        <input type="checkbox" checked={selected} onChange={(event) => onSelectionChanged(link.id, event.target.checked)} />
+        <span />
+      </label>
       <div className="link-card-main">
 		{link.title && <h3 className="link-display-title">{link.title}</h3>}
         <div className="link-title-row">

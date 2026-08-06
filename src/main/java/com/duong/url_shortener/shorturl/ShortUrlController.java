@@ -58,6 +58,13 @@ public class ShortUrlController {
 		return shortUrlService.findAllOwnedBy(jwt.getClaim("uid"), page, size, query, status, sort);
 	}
 
+	@PostMapping("/bulk")
+	public BulkShortUrlResponse bulkUpdate(
+			@AuthenticationPrincipal Jwt jwt,
+			@Valid @RequestBody BulkShortUrlRequest request) {
+		return shortUrlService.bulkUpdate(jwt.getClaim("uid"), request);
+	}
+
 	@GetMapping("/{id}")
 	public ShortUrlResponse findById(
 			@AuthenticationPrincipal Jwt jwt,
