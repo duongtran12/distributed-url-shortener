@@ -633,6 +633,22 @@ class ShortUrlManagementIntegrationTest {
 				.andExpect(jsonPath("$.totalElements").value(1))
 				.andExpect(jsonPath("$.content[0].action").value("DELETED"))
 				.andExpect(jsonPath("$.content[0].shortCode").value("auditowned"));
+
+		mockMvc.perform(get("/api/v1/audit/short-urls/export")
+				.param("action", "DELETED")
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken))
+				.andExpect(status().isOk())
+				.andExpect(content().contentTypeCompatibleWith("text/csv;charset=UTF-8"))
+				.andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION,
+						org.hamcrest.Matchers.startsWith("attachment; filename=\"shortwave-audit-")))
+				.andExpect(content().string(org.hamcrest.Matchers.containsString(
+						"timestamp,action,short_code,details\r\n")))
+				.andExpect(content().string(org.hamcrest.Matchers.containsString(
+						"DELETED,\"auditowned\",\"Deleted short link\"")))
+				.andExpect(content().string(org.hamcrest.Matchers.not(
+						org.hamcrest.Matchers.containsString("auditforeign"))))
+				.andExpect(content().string(org.hamcrest.Matchers.not(
+						org.hamcrest.Matchers.containsString("PIN_CHANGED"))));
 	}
 
 	@Test

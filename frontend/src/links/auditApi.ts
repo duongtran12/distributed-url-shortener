@@ -1,4 +1,4 @@
-import { apiRequest } from '../auth/authApi'
+import { apiDownload, apiRequest } from '../auth/authApi'
 
 export type ShortUrlAuditAction =
   | 'CREATED'
@@ -30,4 +30,12 @@ export function getShortUrlAuditHistory(page = 0, size = 8, action?: ShortUrlAud
   const params = new URLSearchParams({ page: String(page), size: String(size) })
   if (action) params.set('action', action)
   return apiRequest<ShortUrlAuditPage>(`/api/v1/audit/short-urls?${params}`)
+}
+
+export function exportShortUrlAuditHistory(action?: ShortUrlAuditAction) {
+  const params = new URLSearchParams()
+  if (action) params.set('action', action)
+  const query = params.size ? `?${params}` : ''
+  return apiDownload(`/api/v1/audit/short-urls/export${query}`)
+    .then((blob) => ({ blob, filename: `shortwave-audit-${new Date().toISOString().slice(0, 10)}.csv` }))
 }
