@@ -9,7 +9,7 @@ import type { AnalyticsOverview } from '../analytics/types'
 import { HealthBadge, type HealthState } from '../components/HealthBadge'
 import { CreateLinkForm } from '../links/CreateLinkForm'
 import { AuditTimeline } from '../links/AuditTimeline'
-import { getShortUrlAuditHistory, type ShortUrlAuditEvent } from '../links/auditApi'
+import { getShortUrlAuditHistory, type ShortUrlAuditAction, type ShortUrlAuditEvent } from '../links/auditApi'
 import { LinkCard } from '../links/LinkCard'
 import { bulkUpdateShortUrls, exportShortUrls, getShortUrls, getShortUrlTags, type BulkShortUrlAction, type ShortUrlSort } from '../links/linkApi'
 import type { ShortUrl, ShortUrlPage, ShortUrlStatus } from '../links/types'
@@ -56,8 +56,12 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
 	const [tagSuggestionsRefresh, setTagSuggestionsRefresh] = useState(0)
 	const [auditEvents, setAuditEvents] = useState<ShortUrlAuditEvent[]>([])
 	const [auditLoading, setAuditLoading] = useState(true)
+	const [auditLoadingMore, setAuditLoadingMore] = useState(false)
 	const [auditError, setAuditError] = useState('')
 	const [auditRefresh, setAuditRefresh] = useState(0)
+	const [auditAction, setAuditAction] = useState<ShortUrlAuditAction | ''>('')
+	const [auditPage, setAuditPage] = useState(0)
+	const [auditTotalPages, setAuditTotalPages] = useState(0)
 
   const loadPage = useCallback(async (page: number) => {
     setLoading(true)
@@ -116,14 +120,20 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
 
 	useEffect(() => {
 		let active = true
-		getShortUrlAuditHistory()
-			.then((page) => { if (active) setAuditEvents(page.content) })
+		getShortUrlAuditHistory(0, 8, auditAction || undefined)
+			.then((page) => {
+				if (active) {
+					setAuditEvents(page.content)
+					setAuditPage(page.page)
+					setAuditTotalPages(page.totalPages)
+				}
+			})
 			.catch((caught: unknown) => {
 				if (active) setAuditError(caught instanceof ApiClientError ? caught.message : 'Could not load recent activity.')
 			})
 			.finally(() => { if (active) setAuditLoading(false) })
 		return () => { active = false }
-	}, [auditRefresh])
+	}, [auditRefresh, auditAction])
 
   const pageClicks = useMemo(
     () => links.content.reduce((total, link) => total + link.clickCount, 0),
@@ -223,6 +233,28 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
 		setAuditLoading(true)
 		setAuditError('')
 		setAuditRefresh((current) => current + 1)
+	}
+
+	function changeAuditAction(action: ShortUrlAuditAction | '') {
+		setAuditLoading(true)
+		setAuditError('')
+		setAuditAction(action)
+	}
+
+	async function loadMoreAuditHistory() {
+		if (auditLoadingMore || auditPage + 1 >= auditTotalPages) return
+		setAuditLoadingMore(true)
+		setAuditError('')
+		try {
+			const page = await getShortUrlAuditHistory(auditPage + 1, 8, auditAction || undefined)
+			setAuditEvents((current) => [...current, ...page.content])
+			setAuditPage(page.page)
+			setAuditTotalPages(page.totalPages)
+		} catch (caught: unknown) {
+			setAuditError(caught instanceof ApiClientError ? caught.message : 'Could not load more activity.')
+		} finally {
+			setAuditLoadingMore(false)
+		}
 	}
 
 	function refreshTagSuggestions() {
@@ -374,7 +406,17 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
 		  )}
 		</section>
 
-		<AuditTimeline events={auditEvents} loading={auditLoading} error={auditError} onRetry={refreshAuditHistory} />
+		<AuditTimeline
+		  events={auditEvents}
+		  loading={auditLoading}
+		  loadingMore={auditLoadingMore}
+		  error={auditError}
+		  action={auditAction}
+		  hasMore={auditPage + 1 < auditTotalPages}
+		  onActionChange={changeAuditAction}
+		  onLoadMore={() => void loadMoreAuditHistory()}
+		  onRetry={refreshAuditHistory}
+		/>
 
         <section className="links-section" id="links">
           <div className="section-heading">

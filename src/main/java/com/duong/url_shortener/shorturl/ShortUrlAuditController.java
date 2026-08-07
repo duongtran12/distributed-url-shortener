@@ -24,8 +24,9 @@ public class ShortUrlAuditController {
 	@GetMapping
 	public ShortUrlAuditPageResponse findAll(
 			@AuthenticationPrincipal Jwt jwt,
+			@RequestParam(required = false) ShortUrlAuditAction action,
 			@RequestParam(defaultValue = "0") @Min(0) int page,
 			@RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
-		return auditService.findAll(jwt.getClaim("uid"), page, size);
+		return auditService.findAll(jwt.getClaim("uid"), action, page, size);
 	}
 }

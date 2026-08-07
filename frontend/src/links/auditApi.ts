@@ -18,7 +18,7 @@ export interface ShortUrlAuditEvent {
   createdAt: string
 }
 
-interface ShortUrlAuditPage {
+export interface ShortUrlAuditPage {
   content: ShortUrlAuditEvent[]
   page: number
   size: number
@@ -26,6 +26,8 @@ interface ShortUrlAuditPage {
   totalPages: number
 }
 
-export function getShortUrlAuditHistory(page = 0, size = 8) {
-  return apiRequest<ShortUrlAuditPage>(`/api/v1/audit/short-urls?page=${page}&size=${size}`)
+export function getShortUrlAuditHistory(page = 0, size = 8, action?: ShortUrlAuditAction) {
+  const params = new URLSearchParams({ page: String(page), size: String(size) })
+  if (action) params.set('action', action)
+  return apiRequest<ShortUrlAuditPage>(`/api/v1/audit/short-urls?${params}`)
 }

@@ -6,4 +6,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ShortUrlAuditRepository extends JpaRepository<ShortUrlAuditEvent, Long> {
 	Page<ShortUrlAuditEvent> findAllByOwnerId(Long ownerId, Pageable pageable);
+
+	Page<ShortUrlAuditEvent> findAllByOwnerIdAndAction(
+			Long ownerId,
+			ShortUrlAuditAction action,
+			Pageable pageable);
 }

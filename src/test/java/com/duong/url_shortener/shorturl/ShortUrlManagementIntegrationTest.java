@@ -623,6 +623,16 @@ class ShortUrlManagementIntegrationTest {
 				.andExpect(jsonPath("$.content[0].shortCode").value("auditowned"))
 				.andExpect(jsonPath("$.content[0].shortUrlId").value(org.hamcrest.Matchers.nullValue()))
 				.andExpect(jsonPath("$.content[1].action").value("PIN_CHANGED"));
+
+		mockMvc.perform(get("/api/v1/audit/short-urls")
+				.param("action", "DELETED")
+				.param("page", "0")
+				.param("size", "10")
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.totalElements").value(1))
+				.andExpect(jsonPath("$.content[0].action").value("DELETED"))
+				.andExpect(jsonPath("$.content[0].shortCode").value("auditowned"));
 	}
 
 	@Test
