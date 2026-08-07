@@ -9,7 +9,7 @@ import type { AnalyticsOverview } from '../analytics/types'
 import { HealthBadge, type HealthState } from '../components/HealthBadge'
 import { CreateLinkForm } from '../links/CreateLinkForm'
 import { AuditTimeline } from '../links/AuditTimeline'
-import { getShortUrlAuditHistory, type ShortUrlAuditAction, type ShortUrlAuditEvent } from '../links/auditApi'
+import { exportShortUrlAuditHistory, getShortUrlAuditHistory, type ShortUrlAuditAction, type ShortUrlAuditEvent } from '../links/auditApi'
 import { LinkCard } from '../links/LinkCard'
 import { bulkUpdateShortUrls, exportShortUrls, getShortUrls, getShortUrlTags, type BulkShortUrlAction, type ShortUrlSort } from '../links/linkApi'
 import type { ShortUrl, ShortUrlPage, ShortUrlStatus } from '../links/types'
@@ -62,6 +62,8 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
 	const [auditAction, setAuditAction] = useState<ShortUrlAuditAction | ''>('')
 	const [auditPage, setAuditPage] = useState(0)
 	const [auditTotalPages, setAuditTotalPages] = useState(0)
+	const [auditExporting, setAuditExporting] = useState(false)
+	const [auditExportError, setAuditExportError] = useState('')
 
   const loadPage = useCallback(async (page: number) => {
     setLoading(true)
@@ -257,6 +259,26 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
 		}
 	}
 
+	async function exportAuditHistory() {
+		setAuditExporting(true)
+		setAuditExportError('')
+		try {
+			const { blob, filename } = await exportShortUrlAuditHistory(auditAction || undefined)
+			const downloadUrl = URL.createObjectURL(blob)
+			const anchor = document.createElement('a')
+			anchor.href = downloadUrl
+			anchor.download = filename
+			document.body.appendChild(anchor)
+			anchor.click()
+			anchor.remove()
+			URL.revokeObjectURL(downloadUrl)
+		} catch (caught: unknown) {
+			setAuditExportError(caught instanceof ApiClientError ? caught.message : 'Could not export activity.')
+		} finally {
+			setAuditExporting(false)
+		}
+	}
+
 	function refreshTagSuggestions() {
 		setTagSuggestionsRefresh((current) => current + 1)
 	}
@@ -410,11 +432,14 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
 		  events={auditEvents}
 		  loading={auditLoading}
 		  loadingMore={auditLoadingMore}
+		  exporting={auditExporting}
 		  error={auditError}
+		  exportError={auditExportError}
 		  action={auditAction}
 		  hasMore={auditPage + 1 < auditTotalPages}
 		  onActionChange={changeAuditAction}
 		  onLoadMore={() => void loadMoreAuditHistory()}
+		  onExport={() => void exportAuditHistory()}
 		  onRetry={refreshAuditHistory}
 		/>
 
