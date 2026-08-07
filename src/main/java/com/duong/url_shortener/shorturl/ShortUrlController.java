@@ -48,9 +48,10 @@ public class ShortUrlController {
 			@RequestParam(required = false) @Size(max = 200) String query,
 			@RequestParam(required = false) @Size(max = 32) String tag,
 			@RequestParam(required = false) ShortUrlStatus status,
+			@RequestParam(required = false) Boolean pinned,
 			@RequestParam(defaultValue = "NEWEST") ShortUrlSort sort) {
 		ShortUrlCsvExportService.CsvExport export = shortUrlCsvExportService.export(
-				jwt.getClaim("uid"), query, tag, status, sort);
+				jwt.getClaim("uid"), query, tag, status, pinned, sort);
 		return ResponseEntity.ok()
 				.contentType(MediaType.parseMediaType("text/csv;charset=UTF-8"))
 				.header(
@@ -75,8 +76,9 @@ public class ShortUrlController {
 			@RequestParam(required = false) @Size(max = 200) String query,
 			@RequestParam(required = false) @Size(max = 32) String tag,
 			@RequestParam(required = false) ShortUrlStatus status,
+			@RequestParam(required = false) Boolean pinned,
 			@RequestParam(defaultValue = "NEWEST") ShortUrlSort sort) {
-		return shortUrlService.findAllOwnedBy(jwt.getClaim("uid"), page, size, query, tag, status, sort);
+		return shortUrlService.findAllOwnedBy(jwt.getClaim("uid"), page, size, query, tag, status, pinned, sort);
 	}
 
 	@PostMapping("/bulk")

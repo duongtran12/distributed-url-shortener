@@ -242,6 +242,21 @@ class ShortUrlManagementIntegrationTest {
 				.andExpect(jsonPath("$.pinned").value(true));
 
 		mockMvc.perform(get("/api/v1/urls")
+				.param("pinned", "true")
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.content.length()").value(1))
+				.andExpect(jsonPath("$.content[0].shortCode").value("pinfirst"))
+				.andExpect(jsonPath("$.totalElements").value(1));
+
+		mockMvc.perform(get("/api/v1/urls")
+				.param("pinned", "false")
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.content.length()").value(1))
+				.andExpect(jsonPath("$.content[0].shortCode").value("popular"));
+
+		mockMvc.perform(get("/api/v1/urls")
 				.param("sort", "MOST_CLICKED")
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken))
 				.andExpect(status().isOk())
@@ -277,6 +292,7 @@ class ShortUrlManagementIntegrationTest {
 		ShortUrl exported = ShortUrl.create(
 				owner, "csvowned", "https://example.com/a,b", "=SUM(1,2)", "reports", false, null);
 		exported.disable();
+		exported.setPinned(true);
 		shortUrlRepository.saveAndFlush(exported);
 		shortUrlRepository.saveAndFlush(
 				ShortUrl.create(owner, "csvactive", "https://example.com/active", false, null));
@@ -288,6 +304,7 @@ class ShortUrlManagementIntegrationTest {
 		byte[] content = mockMvc.perform(get("/api/v1/urls/export")
 				.param("tag", "reports")
 				.param("status", "DISABLED")
+				.param("pinned", "true")
 				.param("sort", "OLDEST")
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken))
 				.andExpect(status().isOk())
