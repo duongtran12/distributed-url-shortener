@@ -22,9 +22,10 @@ public class ShortUrlCsvExportService {
 			String query,
 			String tag,
 			ShortUrlStatus status,
+			Boolean pinned,
 			ShortUrlSort sort) {
 		ShortUrlPageResponse page = shortUrlService.findAllOwnedBy(
-				userId, 0, MAX_EXPORT_ROWS, query, tag, status, sort);
+				userId, 0, MAX_EXPORT_ROWS, query, tag, status, pinned, sort);
 		StringBuilder csv = new StringBuilder(
 				"short_code,short_url,title,tag,destination,status,pinned,custom_alias,clicks,expires_at,created_at\r\n");
 		page.content().forEach(link -> csv

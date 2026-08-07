@@ -8,6 +8,7 @@ export interface ShortUrlFilters {
 	query?: string
 	tag?: string
 	status?: ShortUrlStatus
+	pinned?: boolean
 	sort?: ShortUrlSort
 }
 
@@ -16,6 +17,7 @@ function filterParams(filters: ShortUrlFilters) {
 	if (filters.query) params.set('query', filters.query)
 	if (filters.tag) params.set('tag', filters.tag)
 	if (filters.status) params.set('status', filters.status)
+	if (filters.pinned !== undefined) params.set('pinned', String(filters.pinned))
 	if (filters.sort) params.set('sort', filters.sort)
 	return params
 }

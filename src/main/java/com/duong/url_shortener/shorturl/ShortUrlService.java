@@ -66,6 +66,7 @@ public class ShortUrlService {
 			String query,
 			String tag,
 			ShortUrlStatus status,
+			Boolean pinned,
 			ShortUrlSort sort) {
 		findActiveUser(userId);
 		PageRequest pageRequest = PageRequest.of(
@@ -83,6 +84,9 @@ public class ShortUrlService {
 		String normalizedTag = normalizeTag(tag);
 		if (normalizedTag != null) {
 			filters = filters.and(hasTag(normalizedTag));
+		}
+		if (pinned != null) {
+			filters = filters.and(hasPinnedState(pinned));
 		}
 
 		return ShortUrlPageResponse.from(shortUrlRepository.findAll(filters, pageRequest), properties.baseUrl());
@@ -314,6 +318,10 @@ public class ShortUrlService {
 
 	private Specification<ShortUrl> hasTag(String tag) {
 		return (root, criteriaQuery, criteriaBuilder) -> criteriaBuilder.equal(root.get("tag"), tag);
+	}
+
+	private Specification<ShortUrl> hasPinnedState(boolean pinned) {
+		return (root, criteriaQuery, criteriaBuilder) -> criteriaBuilder.equal(root.get("pinned"), pinned);
 	}
 
 	private String normalizeSearchQuery(String query) {

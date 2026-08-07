@@ -44,6 +44,7 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
 	const [tagFilter, setTagFilter] = useState('')
 	const [tagInput, setTagInput] = useState('')
 	const [linkSort, setLinkSort] = useState<ShortUrlSort>('NEWEST')
+	const [pinFilter, setPinFilter] = useState<'ALL' | 'PINNED' | 'UNPINNED'>('ALL')
 	const [selectedLinkIds, setSelectedLinkIds] = useState<Set<number>>(() => new Set())
 	const [bulkWorking, setBulkWorking] = useState(false)
 	const [bulkError, setBulkError] = useState('')
@@ -60,13 +61,14 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
 		status: statusFilter || undefined,
 		tag: tagFilter || undefined,
 		sort: linkSort,
+		pinned: pinFilter === 'ALL' ? undefined : pinFilter === 'PINNED',
 	  }))
     } catch (caught: unknown) {
       setError(caught instanceof ApiClientError ? caught.message : 'Could not load your links.')
     } finally {
       setLoading(false)
     }
-  }, [searchQuery, statusFilter, tagFilter, linkSort])
+  }, [searchQuery, statusFilter, tagFilter, linkSort, pinFilter])
 
 	useEffect(() => {
 		let active = true
@@ -75,6 +77,7 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
 			status: statusFilter || undefined,
 			tag: tagFilter || undefined,
 			sort: linkSort,
+			pinned: pinFilter === 'ALL' ? undefined : pinFilter === 'PINNED',
 		})
 			.then((page) => { if (active) setLinks(page) })
 			.catch((caught: unknown) => {
@@ -82,7 +85,7 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
 			})
 			.finally(() => { if (active) setLoading(false) })
 		return () => { active = false }
-	}, [searchQuery, statusFilter, tagFilter, linkSort])
+	}, [searchQuery, statusFilter, tagFilter, linkSort, pinFilter])
 
 	useEffect(() => {
 		let active = true
@@ -155,8 +158,15 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
 		setLinkSort(sort)
 	}
 
+	function changePinFilter(filter: 'ALL' | 'PINNED' | 'UNPINNED') {
+		setLoading(true)
+		setError('')
+		setSelectedLinkIds(new Set())
+		setPinFilter(filter)
+	}
+
 	function clearFilters() {
-		const alreadyClear = !searchInput && !searchQuery && !statusFilter && !tagFilter
+		const alreadyClear = !searchInput && !searchQuery && !statusFilter && !tagFilter && pinFilter === 'ALL'
 		if (!alreadyClear) {
 			setLoading(true)
 			setError('')
@@ -166,6 +176,7 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
 		setStatusFilter('')
 		setTagFilter('')
 		setTagInput('')
+		setPinFilter('ALL')
 		setSelectedLinkIds(new Set())
 		if (alreadyClear) void loadPage(0)
 	}
@@ -245,6 +256,7 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
 				tag: tagFilter || undefined,
 				status: statusFilter || undefined,
 				sort: linkSort,
+				pinned: pinFilter === 'ALL' ? undefined : pinFilter === 'PINNED',
 			})
 			const downloadUrl = URL.createObjectURL(blob)
 			const anchor = document.createElement('a')
@@ -353,7 +365,15 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
 				<option value="MOST_CLICKED">Most clicked</option>
 			  </select>
 			</label>
-			{(searchQuery || statusFilter || tagFilter) && <button className="clear-filters" type="button" onClick={clearFilters}>Clear filters</button>}
+			<label className="pin-filter">
+			  <span>Priority</span>
+			  <select value={pinFilter} onChange={(event) => changePinFilter(event.target.value as 'ALL' | 'PINNED' | 'UNPINNED')}>
+				<option value="ALL">All links</option>
+				<option value="PINNED">Pinned only</option>
+				<option value="UNPINNED">Unpinned only</option>
+			  </select>
+			</label>
+			{(searchQuery || statusFilter || tagFilter || pinFilter !== 'ALL') && <button className="clear-filters" type="button" onClick={clearFilters}>Clear filters</button>}
 		  </form>
           {error && <div className="auth-error links-load-error" role="alert">{error} <button type="button" onClick={() => void loadPage(links.page)}>Try again</button></div>}
 		  {links.content.length > 0 && (
@@ -379,9 +399,9 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
           ) : links.content.length === 0 ? (
             <div className="dashboard-empty">
               <span className="capability-index">EMPTY / 00</span>
-              <h2>{searchQuery || statusFilter || tagFilter ? 'No matching links.' : 'No links yet.'}</h2>
-              <p>{searchQuery || statusFilter || tagFilter ? 'Try a different search term, tag, or status.' : 'Create your first short URL. Click events and analytics will appear here automatically.'}</p>
-              {searchQuery || statusFilter || tagFilter
+              <h2>{searchQuery || statusFilter || tagFilter || pinFilter !== 'ALL' ? 'No matching links.' : 'No links yet.'}</h2>
+              <p>{searchQuery || statusFilter || tagFilter || pinFilter !== 'ALL' ? 'Try a different search term, tag, status, or priority.' : 'Create your first short URL. Click events and analytics will appear here automatically.'}</p>
+              {searchQuery || statusFilter || tagFilter || pinFilter !== 'ALL'
 				? <button className="primary-button" type="button" onClick={clearFilters}>Clear filters <span>-&gt;</span></button>
 				: <button className="primary-button" type="button" onClick={() => setShowCreate(true)}>Create a short link <span>-&gt;</span></button>}
             </div>
