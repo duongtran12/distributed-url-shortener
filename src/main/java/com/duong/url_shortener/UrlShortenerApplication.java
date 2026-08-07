@@ -5,6 +5,7 @@ import com.duong.url_shortener.click.VisitorFingerprintProperties;
 import com.duong.url_shortener.ratelimit.RateLimitProperties;
 import com.duong.url_shortener.shorturl.ShortUrlProperties;
 import com.duong.url_shortener.shorturl.RedirectCacheProperties;
+import com.duong.url_shortener.shorturl.AuditRetentionProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -15,7 +16,8 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 		RedirectCacheProperties.class,
 		ClickTrackingProperties.class,
 		VisitorFingerprintProperties.class,
-		RateLimitProperties.class
+		RateLimitProperties.class,
+		AuditRetentionProperties.class
 })
 public class UrlShortenerApplication {
 
