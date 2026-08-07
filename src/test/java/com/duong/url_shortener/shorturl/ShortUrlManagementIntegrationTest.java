@@ -15,6 +15,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.sql.Timestamp;
 
 import javax.imageio.ImageIO;
 
@@ -649,6 +651,26 @@ class ShortUrlManagementIntegrationTest {
 						org.hamcrest.Matchers.containsString("auditforeign"))))
 				.andExpect(content().string(org.hamcrest.Matchers.not(
 						org.hamcrest.Matchers.containsString("PIN_CHANGED"))));
+	}
+
+	@Test
+	void shouldDeleteOnlyAuditEventsOlderThanTheRetentionCutoff() throws Exception {
+		ShortUrl first = shortUrlRepository.saveAndFlush(
+				ShortUrl.create(owner, "auditold", "https://example.com/old", false, null));
+		ShortUrl second = shortUrlRepository.saveAndFlush(
+				ShortUrl.create(owner, "auditnew", "https://example.com/new", false, null));
+		updatePin(first.getId(), true).andExpect(status().isOk());
+		updatePin(second.getId(), true).andExpect(status().isOk());
+		Instant cutoff = Instant.parse("2025-08-07T00:00:00Z");
+		jdbcTemplate.update(
+				"UPDATE short_url_audit_events SET created_at = ? WHERE short_code = ?",
+				Timestamp.from(cutoff.minusSeconds(1)),
+				"auditold");
+
+		int deleted = auditRepository.deleteOldestBatch(cutoff, 100);
+
+		assertEquals(1, deleted);
+		assertEquals(1, auditRepository.count());
 	}
 
 	@Test

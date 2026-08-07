@@ -76,6 +76,12 @@ app:
     enabled: ${EXPIRATION_CLEANUP_ENABLED:true}
     initial-delay: ${EXPIRATION_CLEANUP_INITIAL_DELAY:PT1M}
     interval: ${EXPIRATION_CLEANUP_INTERVAL:PT5M}
+  audit-retention:
+    enabled: ${AUDIT_RETENTION_ENABLED:true}
+    retention: ${AUDIT_RETENTION_PERIOD:P365D}
+    batch-size: ${AUDIT_RETENTION_BATCH_SIZE:500}
+    initial-delay: ${AUDIT_RETENTION_INITIAL_DELAY:PT5M}
+    interval: ${AUDIT_RETENTION_INTERVAL:PT24H}
   click-tracking:
     enabled: ${CLICK_TRACKING_ENABLED:true}
     exchange: url-shortener.clicks

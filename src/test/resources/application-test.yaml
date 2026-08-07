@@ -15,6 +15,10 @@ app:
     ttl: PT1H
   expiration-cleanup:
     enabled: false
+  audit-retention:
+    enabled: false
+    retention: P365D
+    batch-size: 500
   click-tracking:
     enabled: false
     exchange: url-shortener.clicks
