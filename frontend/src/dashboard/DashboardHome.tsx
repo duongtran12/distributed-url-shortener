@@ -9,7 +9,7 @@ import type { AnalyticsOverview } from '../analytics/types'
 import { HealthBadge, type HealthState } from '../components/HealthBadge'
 import { CreateLinkForm } from '../links/CreateLinkForm'
 import { LinkCard } from '../links/LinkCard'
-import { bulkUpdateShortUrls, exportShortUrls, getShortUrls, type BulkShortUrlAction, type ShortUrlSort } from '../links/linkApi'
+import { bulkUpdateShortUrls, exportShortUrls, getShortUrls, getShortUrlTags, type BulkShortUrlAction, type ShortUrlSort } from '../links/linkApi'
 import type { ShortUrl, ShortUrlPage, ShortUrlStatus } from '../links/types'
 
 interface DashboardHomeProps {
@@ -50,6 +50,8 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
 	const [bulkError, setBulkError] = useState('')
 	const [bulkTag, setBulkTag] = useState('')
 	const [exportingLinks, setExportingLinks] = useState(false)
+	const [tagSuggestions, setTagSuggestions] = useState<string[]>([])
+	const [tagSuggestionsRefresh, setTagSuggestionsRefresh] = useState(0)
 
   const loadPage = useCallback(async (page: number) => {
     setLoading(true)
@@ -69,6 +71,14 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
       setLoading(false)
     }
   }, [searchQuery, statusFilter, tagFilter, linkSort, pinFilter])
+
+	useEffect(() => {
+		let active = true
+		getShortUrlTags()
+			.then((tags) => { if (active) setTagSuggestions(tags) })
+			.catch(() => { if (active) setTagSuggestions([]) })
+		return () => { active = false }
+	}, [tagSuggestionsRefresh])
 
 	useEffect(() => {
 		let active = true
@@ -111,22 +121,26 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
     setShowCreate(false)
 		void loadPage(0)
 		refreshAnalytics()
+		refreshTagSuggestions()
   }
 
 	function handleUpdated() {
 		void loadPage(links.page)
 		refreshAnalytics()
+		refreshTagSuggestions()
   }
 
 	function handleDeleted() {
 		const targetPage = links.content.length === 1 && links.page > 0 ? links.page - 1 : links.page
 		void loadPage(targetPage)
 		refreshAnalytics()
+		refreshTagSuggestions()
 	}
 
 	function handleDuplicated() {
 		void loadPage(0)
 		refreshAnalytics()
+		refreshTagSuggestions()
 	}
 
 	function handleSearch(event: FormEvent<HTMLFormElement>) {
@@ -187,6 +201,10 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
 		setAnalyticsRefresh((current) => current + 1)
 	}
 
+	function refreshTagSuggestions() {
+		setTagSuggestionsRefresh((current) => current + 1)
+	}
+
 	function changeLinkSelection(id: number, selected: boolean) {
 		setSelectedLinkIds((current) => {
 			const next = new Set(current)
@@ -213,6 +231,7 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
 			setBulkTag('')
 			await loadPage(action === 'DELETE' && links.content.length === ids.length && links.page > 0 ? links.page - 1 : links.page)
 			refreshAnalytics()
+			refreshTagSuggestions()
 		} catch (caught: unknown) {
 			setBulkError(caught instanceof ApiClientError ? caught.message : 'Could not update the selected links.')
 		} finally {
@@ -275,6 +294,9 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
 
   return (
     <main className="dashboard-shell">
+	  <datalist id="short-link-tag-suggestions">
+		{tagSuggestions.map((tag) => <option key={tag} value={tag} />)}
+	  </datalist>
       <aside className="dashboard-sidebar">
         <a className="brand" href="/" aria-label="Shortwave dashboard"><span className="brand-mark">S</span><span>shortwave</span></a>
         <nav className="dashboard-nav" aria-label="Dashboard navigation">
@@ -346,7 +368,7 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
 			<button className="filter-submit" type="submit" disabled={loading}>Search</button>
 			<label className="tag-filter">
 			  <span>Tag</span>
-			  <input value={tagInput} onChange={(event) => setTagInput(event.target.value)} maxLength={32} pattern="[A-Za-z0-9_-]*" placeholder="All tags" />
+			  <input value={tagInput} onChange={(event) => setTagInput(event.target.value)} list="short-link-tag-suggestions" maxLength={32} pattern="[A-Za-z0-9_-]*" placeholder="All tags" />
 			</label>
 			<label className="status-filter">
 			  <span>Status</span>
@@ -382,7 +404,7 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
 			  <strong>{selectedLinkIds.size} selected</strong>
 			  {selectedLinkIds.size > 0 && <div className="bulk-actions">
 				<div className="bulk-tag-control">
-				  <input aria-label="Bulk tag" value={bulkTag} onChange={(event) => setBulkTag(event.target.value)} maxLength={32} pattern="[A-Za-z0-9][A-Za-z0-9_-]*" placeholder="Tag selected" />
+				  <input aria-label="Bulk tag" value={bulkTag} onChange={(event) => setBulkTag(event.target.value)} list="short-link-tag-suggestions" maxLength={32} pattern="[A-Za-z0-9][A-Za-z0-9_-]*" placeholder="Tag selected" />
 				  <button type="button" disabled={bulkWorking || !bulkTag.trim()} onClick={() => void runBulkAction('SET_TAG', bulkTag.trim())}>Apply tag</button>
 				  <button type="button" disabled={bulkWorking} onClick={() => void runBulkAction('CLEAR_TAG')}>Clear tag</button>
 				</div>

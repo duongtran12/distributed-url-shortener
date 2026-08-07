@@ -54,7 +54,7 @@ export function CreateLinkForm({ onCreated, onCancel }: CreateLinkFormProps) {
 	  <label className="wide-field">Link title <span>Optional</span><input name="title" type="text" placeholder="AWS production console" maxLength={120} />{fieldErrors.title && <small>{fieldErrors.title}</small>}</label>
       <label className="wide-field">Destination URL<input name="originalUrl" type="url" placeholder="https://example.com/a-very-long-path" maxLength={2048} required />{fieldErrors.originalUrl && <small>{fieldErrors.originalUrl}</small>}</label>
       <div className="form-grid">
-		<label>Tag <span>Optional</span><input name="tag" type="text" placeholder="marketing" maxLength={32} pattern="[A-Za-z0-9][A-Za-z0-9_-]*" />{fieldErrors.tag && <small>{fieldErrors.tag}</small>}</label>
+		<label>Tag <span>Optional</span><input name="tag" type="text" list="short-link-tag-suggestions" placeholder="marketing" maxLength={32} pattern="[A-Za-z0-9][A-Za-z0-9_-]*" />{fieldErrors.tag && <small>{fieldErrors.tag}</small>}</label>
         <label>Custom alias <span>Optional</span><input name="customAlias" type="text" placeholder="summer-launch" minLength={4} maxLength={32} pattern="[A-Za-z0-9_-]+" />{fieldErrors.customAlias && <small>{fieldErrors.customAlias}</small>}</label>
         <label>Expiration <span>Optional</span><input name="expiresAt" type="datetime-local" />{fieldErrors.expiresAt && <small>{fieldErrors.expiresAt}</small>}</label>
       </div>

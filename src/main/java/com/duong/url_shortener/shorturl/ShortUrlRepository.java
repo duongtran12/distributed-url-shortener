@@ -24,6 +24,15 @@ public interface ShortUrlRepository extends JpaRepository<ShortUrl, Long>, JpaSp
 
 	boolean existsByShortCode(String shortCode);
 
+	@Query("""
+			select distinct shortUrl.tag
+			from ShortUrl shortUrl
+			where shortUrl.owner.id = :ownerId
+				and shortUrl.tag is not null
+			order by shortUrl.tag
+			""")
+	List<String> findDistinctTagsByOwnerId(@Param("ownerId") Long ownerId, Pageable pageable);
+
 	@Modifying(clearAutomatically = true)
 	@Query("""
 			update ShortUrl shortUrl

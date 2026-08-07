@@ -29,6 +29,10 @@ export function getShortUrls(page = 0, size = 20, filters: ShortUrlFilters = {})
 	return apiRequest<ShortUrlPage>(`/api/v1/urls?${params.toString()}`)
 }
 
+export function getShortUrlTags() {
+	return apiRequest<string[]>('/api/v1/urls/tags')
+}
+
 export function exportShortUrls(filters: ShortUrlFilters = {}) {
 	const params = filterParams(filters)
 	return apiDownload(`/api/v1/urls/export?${params.toString()}`)

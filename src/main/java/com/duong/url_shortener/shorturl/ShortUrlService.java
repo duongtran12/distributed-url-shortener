@@ -99,6 +99,12 @@ public class ShortUrlService {
 		return ShortUrlResponse.from(shortUrl, properties.baseUrl());
 	}
 
+	@Transactional(readOnly = true)
+	public List<String> findTags(Long userId) {
+		findActiveUser(userId);
+		return shortUrlRepository.findDistinctTagsByOwnerId(userId, PageRequest.of(0, 100));
+	}
+
 	public ShortUrlResponse duplicate(Long userId, Long shortUrlId) {
 		User owner = findActiveUser(userId);
 		ShortUrl source = findOwnedShortUrl(userId, shortUrlId);
