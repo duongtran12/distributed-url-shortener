@@ -60,6 +60,9 @@ class ShortUrlManagementIntegrationTest {
 	private ShortUrlRepository shortUrlRepository;
 
 	@Autowired
+	private ShortUrlAuditRepository auditRepository;
+
+	@Autowired
 	private JwtTokenService jwtTokenService;
 
 	@Autowired
@@ -74,6 +77,7 @@ class ShortUrlManagementIntegrationTest {
 
 	@BeforeEach
 	void setUp() {
+		auditRepository.deleteAll();
 		shortUrlRepository.deleteAll();
 		userRepository.deleteAll();
 		owner = userRepository.saveAndFlush(
@@ -586,6 +590,39 @@ class ShortUrlManagementIntegrationTest {
 
 		mockMvc.perform(get("/{shortCode}", "foreign4"))
 				.andExpect(status().isFound());
+	}
+
+	@Test
+	void shouldReturnOnlyOwnedAuditEventsAndPreserveDeletedShortCode() throws Exception {
+		ShortUrl ownedUrl = shortUrlRepository.saveAndFlush(
+				ShortUrl.create(owner, "auditowned", "https://example.com/owned", false, null));
+		ShortUrl foreignUrl = shortUrlRepository.saveAndFlush(
+				ShortUrl.create(otherUser, "auditforeign", "https://example.com/foreign", false, null));
+
+		updatePin(ownedUrl.getId(), true).andExpect(status().isOk());
+		mockMvc.perform(delete("/api/v1/urls/{id}", ownedUrl.getId())
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken))
+				.andExpect(status().isNoContent());
+
+		String otherToken = jwtTokenService.createAccessToken(otherUser);
+		mockMvc.perform(patch("/api/v1/urls/{id}/pin", foreignUrl.getId())
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + otherToken)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{"pinned": true}
+						"""))
+				.andExpect(status().isOk());
+
+		mockMvc.perform(get("/api/v1/audit/short-urls")
+				.param("page", "0")
+				.param("size", "10")
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.totalElements").value(2))
+				.andExpect(jsonPath("$.content[0].action").value("DELETED"))
+				.andExpect(jsonPath("$.content[0].shortCode").value("auditowned"))
+				.andExpect(jsonPath("$.content[0].shortUrlId").value(org.hamcrest.Matchers.nullValue()))
+				.andExpect(jsonPath("$.content[1].action").value("PIN_CHANGED"));
 	}
 
 	@Test
