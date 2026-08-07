@@ -284,6 +284,21 @@ h1 em { color: #65e7ae; font-style: normal; font-weight: 700; }
 .qr-code-loading { min-height: 280px; display: flex; align-items: center; gap: 10px; color: #71877d; font: 10px 'DM Mono', monospace; text-transform: uppercase; }
 .qr-download { text-decoration: none; }
 
+.audit-section { margin-top: 28px; padding: 26px 28px 6px; background: rgba(8,24,18,.72); border: 1px solid #294238; border-radius: 8px; }
+.audit-retention { color: #60786d; font: 9px 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .1em; }
+.audit-timeline { margin: 24px 0 0; padding: 0; list-style: none; }
+.audit-event { position: relative; display: grid; grid-template-columns: 16px minmax(0,1fr) auto; gap: 15px; padding: 0 0 23px; }
+.audit-event:not(:last-child)::before { position: absolute; top: 10px; bottom: 0; left: 5px; width: 1px; background: #294238; content: ''; }
+.audit-marker { position: relative; z-index: 1; width: 11px; height: 11px; margin-top: 5px; background: #55e6a8; border: 3px solid #10271e; border-radius: 50%; box-shadow: 0 0 0 1px #55e6a8; }
+.audit-marker--deleted { background: #ff907d; box-shadow: 0 0 0 1px #ff907d; }
+.audit-event-content { min-width: 0; }
+.audit-event-content > div { display: flex; align-items: baseline; gap: 10px; }
+.audit-event-content strong { color: #dcebe4; font-size: 13px; }
+.audit-event-content code { overflow: hidden; color: #55e6a8; text-overflow: ellipsis; white-space: nowrap; font: 11px 'DM Mono', monospace; }
+.audit-event-content p { margin: 5px 0 0; color: #71877d; font-size: 11px; }
+.audit-event time { color: #60786d; font: 9px 'DM Mono', monospace; white-space: nowrap; }
+.audit-empty { margin: 23px 0; padding: 22px; color: #71877d; border: 1px dashed #294238; font-size: 12px; }
+
 @media (max-width: 900px) {
   .topbar .text-button { display: none; }
   .hero { grid-template-columns: 1fr; padding-top: 60px; }
@@ -332,6 +347,9 @@ h1 em { color: #65e7ae; font-style: normal; font-weight: 700; }
   .link-actions { grid-column: 2 / -1; }
   .analytics-panel { grid-template-columns: 1fr; }
   .analytics-total { height: auto; padding-bottom: 17px; border-right: 0; border-bottom: 1px solid #294238; }
+  .audit-section { padding-right: 20px; padding-left: 20px; }
+  .audit-event { grid-template-columns: 16px 1fr; }
+  .audit-event time { grid-column: 2; margin-top: -14px; }
 }
 
 @media (max-width: 720px) {

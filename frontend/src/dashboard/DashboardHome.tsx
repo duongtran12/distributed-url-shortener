@@ -8,6 +8,8 @@ import { UrlAnalyticsPanel } from '../analytics/UrlAnalyticsPanel'
 import type { AnalyticsOverview } from '../analytics/types'
 import { HealthBadge, type HealthState } from '../components/HealthBadge'
 import { CreateLinkForm } from '../links/CreateLinkForm'
+import { AuditTimeline } from '../links/AuditTimeline'
+import { getShortUrlAuditHistory, type ShortUrlAuditEvent } from '../links/auditApi'
 import { LinkCard } from '../links/LinkCard'
 import { bulkUpdateShortUrls, exportShortUrls, getShortUrls, getShortUrlTags, type BulkShortUrlAction, type ShortUrlSort } from '../links/linkApi'
 import type { ShortUrl, ShortUrlPage, ShortUrlStatus } from '../links/types'
@@ -52,6 +54,10 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
 	const [exportingLinks, setExportingLinks] = useState(false)
 	const [tagSuggestions, setTagSuggestions] = useState<string[]>([])
 	const [tagSuggestionsRefresh, setTagSuggestionsRefresh] = useState(0)
+	const [auditEvents, setAuditEvents] = useState<ShortUrlAuditEvent[]>([])
+	const [auditLoading, setAuditLoading] = useState(true)
+	const [auditError, setAuditError] = useState('')
+	const [auditRefresh, setAuditRefresh] = useState(0)
 
   const loadPage = useCallback(async (page: number) => {
     setLoading(true)
@@ -107,6 +113,17 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
 			.finally(() => { if (active) setAnalyticsLoading(false) })
 		return () => { active = false }
 	}, [analyticsDays, analyticsRefresh])
+
+	useEffect(() => {
+		let active = true
+		getShortUrlAuditHistory()
+			.then((page) => { if (active) setAuditEvents(page.content) })
+			.catch((caught: unknown) => {
+				if (active) setAuditError(caught instanceof ApiClientError ? caught.message : 'Could not load recent activity.')
+			})
+			.finally(() => { if (active) setAuditLoading(false) })
+		return () => { active = false }
+	}, [auditRefresh])
 
   const pageClicks = useMemo(
     () => links.content.reduce((total, link) => total + link.clickCount, 0),
@@ -199,6 +216,13 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
 		setAnalyticsLoading(true)
 		setAnalyticsError('')
 		setAnalyticsRefresh((current) => current + 1)
+		refreshAuditHistory()
+	}
+
+	function refreshAuditHistory() {
+		setAuditLoading(true)
+		setAuditError('')
+		setAuditRefresh((current) => current + 1)
 	}
 
 	function refreshTagSuggestions() {
@@ -349,6 +373,8 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
 			</div>
 		  )}
 		</section>
+
+		<AuditTimeline events={auditEvents} loading={auditLoading} error={auditError} onRetry={refreshAuditHistory} />
 
         <section className="links-section" id="links">
           <div className="section-heading">

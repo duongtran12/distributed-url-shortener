@@ -25,6 +25,7 @@ public class ShortUrlService {
 	private final ShortCodeGenerator shortCodeGenerator;
 	private final ShortUrlPersistenceService persistenceService;
 	private final ShortUrlProperties properties;
+	private final ShortUrlAuditService auditService;
 
 	public ShortUrlService(
 			UserRepository userRepository,
@@ -33,7 +34,8 @@ public class ShortUrlService {
 			ShortUrlInputValidator inputValidator,
 			ShortCodeGenerator shortCodeGenerator,
 			ShortUrlPersistenceService persistenceService,
-			ShortUrlProperties properties) {
+			ShortUrlProperties properties,
+			ShortUrlAuditService auditService) {
 		this.userRepository = userRepository;
 		this.shortUrlRepository = shortUrlRepository;
 		this.redirectCache = redirectCache;
@@ -41,6 +43,7 @@ public class ShortUrlService {
 		this.shortCodeGenerator = shortCodeGenerator;
 		this.persistenceService = persistenceService;
 		this.properties = properties;
+		this.auditService = auditService;
 	}
 
 	public ShortUrlResponse create(Long userId, CreateShortUrlRequest request) {
@@ -54,6 +57,7 @@ public class ShortUrlService {
 		ShortUrl shortUrl = customAlias == null
 				? createWithGeneratedCode(owner, originalUrl, title, tag, request.expiresAt())
 				: createWithCustomAlias(owner, originalUrl, title, tag, customAlias, request.expiresAt());
+		auditService.record(owner, shortUrl, ShortUrlAuditAction.CREATED, "Created short link");
 
 		return ShortUrlResponse.from(shortUrl, properties.baseUrl());
 	}
@@ -125,6 +129,8 @@ public class ShortUrlService {
 				source.getTitle(),
 				source.getTag(),
 				expiresAt);
+		auditService.record(owner, duplicate, ShortUrlAuditAction.DUPLICATED,
+				"Duplicated from /" + source.getShortCode());
 		return ShortUrlResponse.from(duplicate, properties.baseUrl());
 	}
 
@@ -149,6 +155,8 @@ public class ShortUrlService {
 		}
 
 		redirectCache.evict(shortUrl.getShortCode());
+		auditService.record(shortUrl.getOwner(), shortUrl, ShortUrlAuditAction.STATUS_CHANGED,
+				"Status changed to " + shortUrl.getStatus());
 		return ShortUrlResponse.from(shortUrl, properties.baseUrl());
 	}
 
@@ -160,6 +168,8 @@ public class ShortUrlService {
 		findActiveUser(userId);
 		ShortUrl shortUrl = findOwnedShortUrl(userId, shortUrlId);
 		shortUrl.setPinned(request.pinned());
+		auditService.record(shortUrl.getOwner(), shortUrl, ShortUrlAuditAction.PIN_CHANGED,
+				request.pinned() ? "Pinned short link" : "Unpinned short link");
 		return ShortUrlResponse.from(shortUrl, properties.baseUrl());
 	}
 
@@ -184,6 +194,8 @@ public class ShortUrlService {
 		inputValidator.validateExpiration(request.expiresAt(), Instant.now());
 		shortUrl.updateDetails(originalUrl, title, tag, request.expiresAt());
 		redirectCache.evict(shortUrl.getShortCode());
+		auditService.record(shortUrl.getOwner(), shortUrl, ShortUrlAuditAction.UPDATED,
+				"Updated destination or metadata");
 		return ShortUrlResponse.from(shortUrl, properties.baseUrl());
 	}
 
@@ -191,6 +203,7 @@ public class ShortUrlService {
 	public void delete(Long userId, Long shortUrlId) {
 		findActiveUser(userId);
 		ShortUrl shortUrl = findOwnedShortUrl(userId, shortUrlId);
+		auditService.recordDeleted(shortUrl.getOwner(), shortUrl.getShortCode(), "Deleted short link");
 		shortUrlRepository.delete(shortUrl);
 		redirectCache.evict(shortUrl.getShortCode());
 	}
@@ -224,11 +237,31 @@ public class ShortUrlService {
 
 		for (ShortUrl shortUrl : shortUrls) {
 			switch (request.action()) {
-				case ENABLE -> shortUrl.enable();
-				case DISABLE -> shortUrl.disable();
-				case DELETE -> shortUrlRepository.delete(shortUrl);
-				case SET_TAG -> shortUrl.setTag(bulkTag);
-				case CLEAR_TAG -> shortUrl.setTag(null);
+				case ENABLE -> {
+					shortUrl.enable();
+					auditService.record(shortUrl.getOwner(), shortUrl, ShortUrlAuditAction.STATUS_CHANGED,
+							"Bulk status changed to ACTIVE");
+				}
+				case DISABLE -> {
+					shortUrl.disable();
+					auditService.record(shortUrl.getOwner(), shortUrl, ShortUrlAuditAction.STATUS_CHANGED,
+							"Bulk status changed to DISABLED");
+				}
+				case DELETE -> {
+					auditService.recordDeleted(shortUrl.getOwner(), shortUrl.getShortCode(),
+							"Bulk deleted short link");
+					shortUrlRepository.delete(shortUrl);
+				}
+				case SET_TAG -> {
+					shortUrl.setTag(bulkTag);
+					auditService.record(shortUrl.getOwner(), shortUrl, ShortUrlAuditAction.BULK_TAG_CHANGED,
+							"Bulk tag changed to " + bulkTag);
+				}
+				case CLEAR_TAG -> {
+					shortUrl.setTag(null);
+					auditService.record(shortUrl.getOwner(), shortUrl, ShortUrlAuditAction.BULK_TAG_CHANGED,
+							"Bulk tag cleared");
+				}
 			}
 			redirectCache.evict(shortUrl.getShortCode());
 		}
