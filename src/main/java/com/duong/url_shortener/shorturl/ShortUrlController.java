@@ -81,6 +81,11 @@ public class ShortUrlController {
 		return shortUrlService.findAllOwnedBy(jwt.getClaim("uid"), page, size, query, tag, status, pinned, sort);
 	}
 
+	@GetMapping("/tags")
+	public java.util.List<String> findTags(@AuthenticationPrincipal Jwt jwt) {
+		return shortUrlService.findTags(jwt.getClaim("uid"));
+	}
+
 	@PostMapping("/bulk")
 	public BulkShortUrlResponse bulkUpdate(
 			@AuthenticationPrincipal Jwt jwt,

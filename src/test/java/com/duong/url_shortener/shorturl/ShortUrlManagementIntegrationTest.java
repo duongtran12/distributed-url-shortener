@@ -165,6 +165,27 @@ class ShortUrlManagementIntegrationTest {
 	}
 
 	@Test
+	void shouldListDistinctSortedTagsForTheOwner() throws Exception {
+		shortUrlRepository.saveAndFlush(
+				ShortUrl.create(owner, "taglist01", "https://example.com/one", "One", "social", false, null));
+		shortUrlRepository.saveAndFlush(
+				ShortUrl.create(owner, "taglist02", "https://example.com/two", "Two", "marketing", false, null));
+		shortUrlRepository.saveAndFlush(
+				ShortUrl.create(owner, "taglist03", "https://example.com/three", "Three", "social", false, null));
+		shortUrlRepository.saveAndFlush(
+				ShortUrl.create(owner, "taglist04", "https://example.com/four", false, null));
+		shortUrlRepository.saveAndFlush(
+				ShortUrl.create(otherUser, "taglist05", "https://example.com/private", "Private", "private", false, null));
+
+		mockMvc.perform(get("/api/v1/urls/tags")
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.length()").value(2))
+				.andExpect(jsonPath("$[0]").value("marketing"))
+				.andExpect(jsonPath("$[1]").value("social"));
+	}
+
+	@Test
 	void shouldTreatSearchWildcardsAsLiteralCharactersAndLimitQueryLength() throws Exception {
 		shortUrlRepository.saveAndFlush(
 				ShortUrl.create(owner, "percent1", "https://example.com/rate%25", false, null));
