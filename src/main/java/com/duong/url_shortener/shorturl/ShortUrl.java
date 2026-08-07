@@ -147,6 +147,10 @@ public class ShortUrl {
 		this.pinned = pinned;
 	}
 
+	public void setTag(String tag) {
+		this.tag = tag;
+	}
+
 	public void updateDetails(String originalUrl, String title, String tag, Instant expiresAt) {
 		this.originalUrl = originalUrl;
 		this.title = title;

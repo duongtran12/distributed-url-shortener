@@ -188,6 +188,13 @@ public class ShortUrlService {
 	@Transactional
 	public BulkShortUrlResponse bulkUpdate(Long userId, BulkShortUrlRequest request) {
 		findActiveUser(userId);
+		String bulkTag = normalizeTag(request.tag());
+		if (request.action() == BulkShortUrlRequest.Action.SET_TAG && bulkTag == null) {
+			throw new ApiException(
+					HttpStatus.BAD_REQUEST,
+					"BULK_TAG_REQUIRED",
+					"A tag is required for the SET_TAG action");
+		}
 		List<Long> ids = List.copyOf(new LinkedHashSet<>(request.ids()));
 		List<ShortUrl> shortUrls = shortUrlRepository.findAllByIdInAndOwnerId(ids, userId);
 		if (shortUrls.size() != ids.size()) {
@@ -210,6 +217,8 @@ public class ShortUrlService {
 				case ENABLE -> shortUrl.enable();
 				case DISABLE -> shortUrl.disable();
 				case DELETE -> shortUrlRepository.delete(shortUrl);
+				case SET_TAG -> shortUrl.setTag(bulkTag);
+				case CLEAR_TAG -> shortUrl.setTag(null);
 			}
 			redirectCache.evict(shortUrl.getShortCode());
 		}
