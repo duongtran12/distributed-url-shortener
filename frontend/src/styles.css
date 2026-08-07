@@ -286,6 +286,9 @@ h1 em { color: #65e7ae; font-style: normal; font-weight: 700; }
 
 .audit-section { margin-top: 28px; padding: 26px 28px 6px; background: rgba(8,24,18,.72); border: 1px solid #294238; border-radius: 8px; }
 .audit-retention { color: #60786d; font: 9px 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .1em; }
+.audit-filter { display: grid; gap: 6px; min-width: 170px; color: #60786d; font: 9px 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .1em; }
+.audit-filter select { padding: 10px 12px; color: #dcebe4; background: #07130f; border: 1px solid #294238; border-radius: 4px; outline: none; font: 11px 'Manrope', sans-serif; text-transform: none; letter-spacing: 0; }
+.audit-filter select:focus { border-color: #55e6a8; }
 .audit-timeline { margin: 24px 0 0; padding: 0; list-style: none; }
 .audit-event { position: relative; display: grid; grid-template-columns: 16px minmax(0,1fr) auto; gap: 15px; padding: 0 0 23px; }
 .audit-event:not(:last-child)::before { position: absolute; top: 10px; bottom: 0; left: 5px; width: 1px; background: #294238; content: ''; }
@@ -298,6 +301,9 @@ h1 em { color: #65e7ae; font-style: normal; font-weight: 700; }
 .audit-event-content p { margin: 5px 0 0; color: #71877d; font-size: 11px; }
 .audit-event time { color: #60786d; font: 9px 'DM Mono', monospace; white-space: nowrap; }
 .audit-empty { margin: 23px 0; padding: 22px; color: #71877d; border: 1px dashed #294238; font-size: 12px; }
+.audit-load-more { display: block; width: 100%; margin: 0 0 22px; padding: 12px; color: #9eb4aa; background: transparent; border: 1px solid #294238; border-radius: 4px; cursor: pointer; font: 10px 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .08em; }
+.audit-load-more:hover:not(:disabled) { color: #55e6a8; border-color: #55e6a8; }
+.audit-load-more:disabled { cursor: wait; opacity: .6; }
 
 @media (max-width: 900px) {
   .topbar .text-button { display: none; }

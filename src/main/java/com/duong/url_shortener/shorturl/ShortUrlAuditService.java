@@ -29,7 +29,7 @@ public class ShortUrlAuditService {
 	}
 
 	@Transactional(readOnly = true)
-	public ShortUrlAuditPageResponse findAll(Long userId, int page, int size) {
+	public ShortUrlAuditPageResponse findAll(Long userId, ShortUrlAuditAction action, int page, int size) {
 		User user = userRepository.findById(userId)
 				.orElseThrow(() -> new ApiException(
 						HttpStatus.UNAUTHORIZED,
@@ -40,6 +40,8 @@ public class ShortUrlAuditService {
 		}
 		PageRequest pageable = PageRequest.of(page, size, Sort.by(
 				Sort.Order.desc("createdAt"), Sort.Order.desc("id")));
-		return ShortUrlAuditPageResponse.from(auditRepository.findAllByOwnerId(userId, pageable));
+		return ShortUrlAuditPageResponse.from(action == null
+				? auditRepository.findAllByOwnerId(userId, pageable)
+				: auditRepository.findAllByOwnerIdAndAction(userId, action, pageable));
 	}
 }
