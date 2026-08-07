@@ -47,6 +47,7 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
 	const [selectedLinkIds, setSelectedLinkIds] = useState<Set<number>>(() => new Set())
 	const [bulkWorking, setBulkWorking] = useState(false)
 	const [bulkError, setBulkError] = useState('')
+	const [bulkTag, setBulkTag] = useState('')
 	const [exportingLinks, setExportingLinks] = useState(false)
 
   const loadPage = useCallback(async (page: number) => {
@@ -189,15 +190,16 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
 		setSelectedLinkIds(allSelected ? new Set() : new Set(links.content.map((link) => link.id)))
 	}
 
-	async function runBulkAction(action: BulkShortUrlAction) {
+	async function runBulkAction(action: BulkShortUrlAction, tag?: string) {
 		const ids = [...selectedLinkIds]
 		if (ids.length === 0) return
 		if (action === 'DELETE' && !window.confirm(`Delete ${ids.length} selected links? This cannot be undone.`)) return
 		setBulkWorking(true)
 		setBulkError('')
 		try {
-			await bulkUpdateShortUrls(ids, action)
+			await bulkUpdateShortUrls(ids, action, tag)
 			setSelectedLinkIds(new Set())
+			setBulkTag('')
 			await loadPage(action === 'DELETE' && links.content.length === ids.length && links.page > 0 ? links.page - 1 : links.page)
 			refreshAnalytics()
 		} catch (caught: unknown) {
@@ -359,6 +361,11 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
 			  <label><input type="checkbox" checked={links.content.every((link) => selectedLinkIds.has(link.id))} onChange={toggleCurrentPageSelection} /><span>Select page</span></label>
 			  <strong>{selectedLinkIds.size} selected</strong>
 			  {selectedLinkIds.size > 0 && <div className="bulk-actions">
+				<div className="bulk-tag-control">
+				  <input aria-label="Bulk tag" value={bulkTag} onChange={(event) => setBulkTag(event.target.value)} maxLength={32} pattern="[A-Za-z0-9][A-Za-z0-9_-]*" placeholder="Tag selected" />
+				  <button type="button" disabled={bulkWorking || !bulkTag.trim()} onClick={() => void runBulkAction('SET_TAG', bulkTag.trim())}>Apply tag</button>
+				  <button type="button" disabled={bulkWorking} onClick={() => void runBulkAction('CLEAR_TAG')}>Clear tag</button>
+				</div>
 				<button type="button" disabled={bulkWorking} onClick={() => void runBulkAction('ENABLE')}>Enable</button>
 				<button type="button" disabled={bulkWorking} onClick={() => void runBulkAction('DISABLE')}>Disable</button>
 				<button className="danger-action" type="button" disabled={bulkWorking} onClick={() => void runBulkAction('DELETE')}>Delete</button>

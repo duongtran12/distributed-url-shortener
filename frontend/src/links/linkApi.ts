@@ -2,7 +2,7 @@ import { apiDownload, apiRequest } from '../auth/authApi'
 import type { CreateShortUrlInput, ShortUrl, ShortUrlPage, ShortUrlStatus, UpdateShortUrlInput } from './types'
 
 export type ShortUrlSort = 'NEWEST' | 'OLDEST' | 'MOST_CLICKED'
-export type BulkShortUrlAction = 'ENABLE' | 'DISABLE' | 'DELETE'
+export type BulkShortUrlAction = 'ENABLE' | 'DISABLE' | 'DELETE' | 'SET_TAG' | 'CLEAR_TAG'
 
 export interface ShortUrlFilters {
 	query?: string
@@ -69,10 +69,10 @@ export function duplicateShortUrl(id: number) {
   return apiRequest<ShortUrl>(`/api/v1/urls/${id}/duplicate`, { method: 'POST' })
 }
 
-export function bulkUpdateShortUrls(ids: number[], action: BulkShortUrlAction) {
+export function bulkUpdateShortUrls(ids: number[], action: BulkShortUrlAction, tag?: string) {
   return apiRequest<{ action: BulkShortUrlAction, affected: number }>('/api/v1/urls/bulk', {
     method: 'POST',
-    body: JSON.stringify({ ids, action }),
+    body: JSON.stringify({ ids, action, ...(tag ? { tag } : {}) }),
   })
 }
 

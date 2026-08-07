@@ -585,6 +585,31 @@ class ShortUrlManagementIntegrationTest {
 		assertEquals(ShortUrlStatus.ACTIVE, shortUrlRepository.findById(foreign.getId()).orElseThrow().getStatus());
 	}
 
+	@Test
+	void shouldSetAndClearTagsInBulk() throws Exception {
+		ShortUrl first = shortUrlRepository.saveAndFlush(
+				ShortUrl.create(owner, "tagbulkone", "https://example.com/one", false, null));
+		ShortUrl second = shortUrlRepository.saveAndFlush(
+				ShortUrl.create(owner, "tagbulktwo", "https://example.com/two", false, null));
+
+		bulkTagRequest(first.getId(), second.getId(), "SET_TAG", "MARKETING")
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.action").value("SET_TAG"))
+				.andExpect(jsonPath("$.affected").value(2));
+		assertEquals("marketing", shortUrlRepository.findById(first.getId()).orElseThrow().getTag());
+		assertEquals("marketing", shortUrlRepository.findById(second.getId()).orElseThrow().getTag());
+
+		bulkRequest(first.getId(), second.getId(), "CLEAR_TAG")
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.action").value("CLEAR_TAG"));
+		assertEquals(null, shortUrlRepository.findById(first.getId()).orElseThrow().getTag());
+		assertEquals(null, shortUrlRepository.findById(second.getId()).orElseThrow().getTag());
+
+		bulkRequest(first.getId(), second.getId(), "SET_TAG")
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("BULK_TAG_REQUIRED"));
+	}
+
 	private org.springframework.test.web.servlet.ResultActions bulkRequest(
 			Long firstId,
 			Long secondId,
@@ -595,6 +620,19 @@ class ShortUrlManagementIntegrationTest {
 				.content("""
 						{"ids": [%d, %d], "action": "%s"}
 						""".formatted(firstId, secondId, action)));
+	}
+
+	private org.springframework.test.web.servlet.ResultActions bulkTagRequest(
+			Long firstId,
+			Long secondId,
+			String action,
+			String tag) throws Exception {
+		return mockMvc.perform(post("/api/v1/urls/bulk")
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{"ids": [%d, %d], "action": "%s", "tag": "%s"}
+						""".formatted(firstId, secondId, action, tag)));
 	}
 
 	private org.springframework.test.web.servlet.ResultActions updateStatus(
