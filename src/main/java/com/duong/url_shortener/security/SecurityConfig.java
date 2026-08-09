@@ -46,7 +46,8 @@ public class SecurityConfig {
 				.logout(AbstractHttpConfigurer::disable)
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.authorizeHttpRequests(authorize -> authorize
-						.requestMatchers(HttpMethod.POST, "/api/v1/auth/register", "/api/v1/auth/login").permitAll()
+						.requestMatchers(HttpMethod.POST, "/api/v1/auth/register", "/api/v1/auth/login",
+								"/api/v1/auth/refresh", "/api/v1/auth/logout").permitAll()
 						.requestMatchers(HttpMethod.GET, "/{shortCode}").permitAll()
 						.requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
 						.requestMatchers("/actuator/prometheus").permitAll()

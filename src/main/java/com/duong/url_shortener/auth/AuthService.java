@@ -1,7 +1,6 @@
 package com.duong.url_shortener.auth;
 
 import com.duong.url_shortener.common.exception.ApiException;
-import com.duong.url_shortener.security.JwtTokenService;
 import com.duong.url_shortener.user.EmailNormalizer;
 import com.duong.url_shortener.user.User;
 import com.duong.url_shortener.user.UserRepository;
@@ -20,21 +19,21 @@ public class AuthService {
 	private final UserRepository userRepository;
 	private final PasswordEncoder passwordEncoder;
 	private final AuthenticationManager authenticationManager;
-	private final JwtTokenService jwtTokenService;
+	private final RefreshTokenService refreshTokenService;
 
 	public AuthService(
 			UserRepository userRepository,
 			PasswordEncoder passwordEncoder,
 			AuthenticationManager authenticationManager,
-			JwtTokenService jwtTokenService) {
+			RefreshTokenService refreshTokenService) {
 		this.userRepository = userRepository;
 		this.passwordEncoder = passwordEncoder;
 		this.authenticationManager = authenticationManager;
-		this.jwtTokenService = jwtTokenService;
+		this.refreshTokenService = refreshTokenService;
 	}
 
-	@Transactional(readOnly = true)
-	public LoginResponse login(LoginRequest request) {
+	@Transactional
+	public AuthSession login(LoginRequest request) {
 		String normalizedEmail = EmailNormalizer.normalize(request.email());
 
 		try {
@@ -50,10 +49,15 @@ public class AuthService {
 						"INVALID_CREDENTIALS",
 						"Invalid email or password"));
 
-		return new LoginResponse(
-				jwtTokenService.createAccessToken(user),
-				"Bearer",
-				jwtTokenService.accessTokenExpiresInSeconds());
+		return refreshTokenService.create(user);
+	}
+
+	public AuthSession refresh(String refreshToken) {
+		return refreshTokenService.rotate(refreshToken);
+	}
+
+	public void logout(String refreshToken) {
+		refreshTokenService.revoke(refreshToken);
 	}
 
 	@Transactional

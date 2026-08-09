@@ -3,6 +3,7 @@ import type { ApiErrorPayload, UserProfile } from './types'
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
 const TOKEN_KEY = 'shortwave.access-token'
 export const SESSION_EXPIRED_EVENT = 'shortwave:session-expired'
+let refreshPromise: Promise<string> | null = null
 
 interface LoginResponse {
   accessToken: string
@@ -40,14 +41,30 @@ export async function apiDownload(path: string): Promise<Blob> {
 
 async function authorizedRequest(path: string, options: RequestInit = {}): Promise<Response> {
   const token = getAccessToken()
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  let response = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
+    credentials: 'include',
     headers: {
       ...(options.body ? { 'Content-Type': 'application/json' } : {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
   })
+
+  if (response.status === 401 && token && path !== '/api/v1/auth/refresh') {
+    try {
+      const refreshedToken = await refreshAccessToken()
+      response = await fetch(`${API_BASE_URL}${path}`, {
+        ...options,
+        credentials: 'include',
+        headers: {
+          ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+          Authorization: `Bearer ${refreshedToken}`,
+          ...options.headers,
+        },
+      })
+    } catch { /* The original 401 is handled below. */ }
+  }
 
   if (!response.ok) {
     let payload: ApiErrorPayload
@@ -68,6 +85,23 @@ async function authorizedRequest(path: string, options: RequestInit = {}): Promi
   }
 
   return response
+}
+
+async function refreshAccessToken(): Promise<string> {
+  if (!refreshPromise) {
+    refreshPromise = fetch(`${API_BASE_URL}/api/v1/auth/refresh`, {
+      method: 'POST',
+      credentials: 'include',
+    })
+      .then(async (response) => {
+        if (!response.ok) throw new Error('Session refresh failed')
+        const session = await response.json() as LoginResponse
+        sessionStorage.setItem(TOKEN_KEY, session.accessToken)
+        return session.accessToken
+      })
+      .finally(() => { refreshPromise = null })
+  }
+  return refreshPromise
 }
 
 export async function login(email: string, password: string): Promise<UserProfile> {
@@ -94,6 +128,35 @@ export async function register(displayName: string, email: string, password: str
 
 export function getCurrentUser(): Promise<UserProfile> {
   return apiRequest<UserProfile>('/api/v1/users/me')
+}
+
+export async function restoreSession(): Promise<UserProfile | null> {
+  if (!getAccessToken()) {
+    try {
+      await refreshAccessToken()
+    } catch {
+      clearAccessToken()
+      return null
+    }
+  }
+  try {
+    return await getCurrentUser()
+  } catch {
+    clearAccessToken()
+    return null
+  }
+}
+
+export async function logout(): Promise<void> {
+  clearAccessToken()
+  try {
+    await fetch(`${API_BASE_URL}/api/v1/auth/logout`, {
+      method: 'POST',
+      credentials: 'include',
+    })
+  } catch {
+    // Local logout still succeeds when the backend is unavailable.
+  }
 }
 
 export function changePassword(currentPassword: string, newPassword: string): Promise<void> {

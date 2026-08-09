@@ -2,12 +2,17 @@ package com.duong.url_shortener.auth;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.duong.url_shortener.user.User;
 import com.duong.url_shortener.user.UserRepository;
 import com.jayway.jsonpath.JsonPath;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +24,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
@@ -74,6 +80,70 @@ class LoginIntegrationTest {
 		mockMvc.perform(get("/actuator/info")
 				.header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken))
 				.andExpect(status().isOk());
+	}
+
+	@Test
+	void shouldRotateRefreshTokenRejectReplayAndRevokeOnLogout() throws Exception {
+		MvcResult login = mockMvc.perform(post("/api/v1/auth/login")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{
+						  "email": "student@example.com",
+						  "password": "strong-password"
+						}
+						"""))
+				.andExpect(status().isOk())
+				.andReturn();
+		Cookie firstRefreshToken = login.getResponse().getCookie("shortwave_refresh");
+		assertNotNull(firstRefreshToken);
+		assertTrue(firstRefreshToken.isHttpOnly());
+		assertTrue(firstRefreshToken.getMaxAge() > 0);
+
+		MvcResult refresh = mockMvc.perform(post("/api/v1/auth/refresh")
+				.cookie(firstRefreshToken))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.accessToken").isNotEmpty())
+				.andReturn();
+		Cookie rotatedRefreshToken = refresh.getResponse().getCookie("shortwave_refresh");
+		assertNotNull(rotatedRefreshToken);
+		assertNotEquals(firstRefreshToken.getValue(), rotatedRefreshToken.getValue());
+
+		mockMvc.perform(post("/api/v1/auth/refresh").cookie(firstRefreshToken))
+				.andExpect(status().isUnauthorized())
+				.andExpect(jsonPath("$.code").value("INVALID_REFRESH_TOKEN"));
+
+		mockMvc.perform(post("/api/v1/auth/logout").cookie(rotatedRefreshToken))
+				.andExpect(status().isNoContent());
+
+		mockMvc.perform(post("/api/v1/auth/refresh").cookie(rotatedRefreshToken))
+				.andExpect(status().isUnauthorized())
+				.andExpect(jsonPath("$.code").value("INVALID_REFRESH_TOKEN"));
+	}
+
+	@Test
+	void shouldRevokeRefreshSessionsWhenPasswordChanges() throws Exception {
+		MvcResult login = mockMvc.perform(post("/api/v1/auth/login")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{"email":"student@example.com","password":"strong-password"}
+						"""))
+				.andExpect(status().isOk())
+				.andReturn();
+		String accessToken = JsonPath.read(login.getResponse().getContentAsString(), "$.accessToken");
+		Cookie refreshToken = login.getResponse().getCookie("shortwave_refresh");
+		assertNotNull(refreshToken);
+
+		mockMvc.perform(patch("/api/v1/users/me/password")
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{"currentPassword":"strong-password","newPassword":"new-strong-password"}
+						"""))
+				.andExpect(status().isNoContent());
+
+		mockMvc.perform(post("/api/v1/auth/refresh").cookie(refreshToken))
+				.andExpect(status().isUnauthorized())
+				.andExpect(jsonPath("$.code").value("INVALID_REFRESH_TOKEN"));
 	}
 
 	@Test
