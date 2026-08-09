@@ -10,6 +10,9 @@ app:
   jwt:
     secret: MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE=
     access-token-expiration: PT15M
+  refresh-token:
+    expiration: P30D
+    secure-cookie: false
   redirect-cache:
     enabled: false
     ttl: PT1H

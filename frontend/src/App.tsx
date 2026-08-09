@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { AuthPanel } from './auth/AuthPanel'
-import { clearAccessToken, getAccessToken, getCurrentUser, SESSION_EXPIRED_EVENT } from './auth/authApi'
+import { logout, restoreSession, SESSION_EXPIRED_EVENT } from './auth/authApi'
 import type { UserProfile } from './auth/types'
 import { DashboardHome } from './dashboard/DashboardHome'
 import { HealthBadge, type HealthState } from './components/HealthBadge'
@@ -22,7 +22,7 @@ function App() {
   const [authView, setAuthView] = useState<AuthView>(null)
   const [authNotice, setAuthNotice] = useState('')
   const [user, setUser] = useState<UserProfile | null>(null)
-  const [sessionLoading, setSessionLoading] = useState(() => Boolean(getAccessToken()))
+  const [sessionLoading, setSessionLoading] = useState(true)
 
   useEffect(() => {
     function handleSessionExpired() {
@@ -55,10 +55,8 @@ function App() {
   }, [])
 
   useEffect(() => {
-    if (!getAccessToken()) return
-    getCurrentUser()
+    restoreSession()
       .then(setUser)
-      .catch(() => clearAccessToken())
       .finally(() => setSessionLoading(false))
   }, [])
 
@@ -69,12 +67,12 @@ function App() {
   }
 
   function handleLogout() {
-    clearAccessToken()
+    void logout()
     setUser(null)
   }
 
   function handlePasswordChanged() {
-    clearAccessToken()
+    void logout()
     setUser(null)
     setAuthNotice('Password updated. Sign in again with your new password.')
     setAuthView('login')

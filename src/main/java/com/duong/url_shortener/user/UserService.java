@@ -1,6 +1,7 @@
 package com.duong.url_shortener.user;
 
 import com.duong.url_shortener.common.exception.ApiException;
+import com.duong.url_shortener.auth.RefreshTokenService;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -11,10 +12,15 @@ public class UserService {
 
 	private final UserRepository userRepository;
 	private final PasswordEncoder passwordEncoder;
+	private final RefreshTokenService refreshTokenService;
 
-	public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+	public UserService(
+			UserRepository userRepository,
+			PasswordEncoder passwordEncoder,
+			RefreshTokenService refreshTokenService) {
 		this.userRepository = userRepository;
 		this.passwordEncoder = passwordEncoder;
+		this.refreshTokenService = refreshTokenService;
 	}
 
 	@Transactional(readOnly = true)
@@ -48,6 +54,7 @@ public class UserService {
 		}
 
 		user.changePassword(passwordEncoder.encode(request.newPassword()));
+		refreshTokenService.revokeAllForUser(userId);
 	}
 
 	private User findActiveUser(Long userId) {
