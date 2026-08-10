@@ -9,6 +9,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long> {
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
@@ -52,4 +54,19 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
 			Long currentId,
 			Instant now,
 			int maxActiveSessions);
+
+	@Modifying
+	@Transactional
+	@Query(value = """
+			DELETE FROM refresh_tokens
+			WHERE id IN (
+			    SELECT id
+			    FROM refresh_tokens
+			    WHERE expires_at < :cutoff
+			       OR revoked_at < :cutoff
+			    ORDER BY LEAST(expires_at, COALESCE(revoked_at, expires_at)), id
+			    LIMIT :batchSize
+			)
+			""", nativeQuery = true)
+	int deleteStaleBatch(@Param("cutoff") Instant cutoff, @Param("batchSize") int batchSize);
 }

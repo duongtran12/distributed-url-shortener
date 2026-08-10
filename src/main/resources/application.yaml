@@ -69,6 +69,12 @@ app:
     expiration: ${REFRESH_TOKEN_EXPIRATION:P30D}
     secure-cookie: ${REFRESH_TOKEN_SECURE_COOKIE:false}
     max-active-sessions: ${REFRESH_TOKEN_MAX_ACTIVE_SESSIONS:5}
+  refresh-token-cleanup:
+    enabled: ${REFRESH_TOKEN_CLEANUP_ENABLED:true}
+    retention: ${REFRESH_TOKEN_CLEANUP_RETENTION:P7D}
+    batch-size: ${REFRESH_TOKEN_CLEANUP_BATCH_SIZE:500}
+    initial-delay: ${REFRESH_TOKEN_CLEANUP_INITIAL_DELAY:PT5M}
+    interval: ${REFRESH_TOKEN_CLEANUP_INTERVAL:PT24H}
   short-url:
     code-length: ${SHORT_CODE_LENGTH:7}
     max-generation-attempts: ${SHORT_CODE_MAX_GENERATION_ATTEMPTS:5}

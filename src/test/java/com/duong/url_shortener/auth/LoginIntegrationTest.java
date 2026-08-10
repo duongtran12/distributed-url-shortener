@@ -10,6 +10,9 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.Duration;
+import java.time.Instant;
+
 import com.duong.url_shortener.user.User;
 import com.duong.url_shortener.user.UserRepository;
 import com.jayway.jsonpath.JsonPath;
@@ -51,6 +54,9 @@ class LoginIntegrationTest {
 
 	@Autowired
 	private PasswordEncoder passwordEncoder;
+
+	@Autowired
+	private RefreshTokenRepository refreshTokenRepository;
 
 	@BeforeEach
 	void setUpUser() {
@@ -236,6 +242,28 @@ class LoginIntegrationTest {
 
 		mockMvc.perform(post("/api/v1/auth/refresh").cookie(newestCookie))
 				.andExpect(status().isOk());
+	}
+
+	@Test
+	void shouldDeleteOnlyRefreshTokensStaleBeyondRetention() {
+		User user = userRepository.findByEmail("student@example.com").orElseThrow();
+		Instant now = Instant.now();
+		Instant cutoff = now.minus(Duration.ofDays(7));
+		RefreshToken expired = refreshTokenRepository.save(RefreshToken.create(
+				user, "a".repeat(64), cutoff.minusSeconds(1), "Expired browser", now));
+		RefreshToken revoked = RefreshToken.create(
+				user, "b".repeat(64), now.plus(Duration.ofDays(30)), "Revoked browser", now);
+		revoked.revoke(cutoff.minusSeconds(1));
+		refreshTokenRepository.save(revoked);
+		RefreshToken active = refreshTokenRepository.saveAndFlush(RefreshToken.create(
+				user, "c".repeat(64), now.plus(Duration.ofDays(30)), "Active browser", now));
+
+		int deleted = refreshTokenRepository.deleteStaleBatch(cutoff, 100);
+
+		assertTrue(deleted == 2);
+		assertTrue(refreshTokenRepository.findById(expired.getId()).isEmpty());
+		assertTrue(refreshTokenRepository.findById(revoked.getId()).isEmpty());
+		assertTrue(refreshTokenRepository.findById(active.getId()).isPresent());
 	}
 
 	private MvcResult loginWithUserAgent(String userAgent) throws Exception {
