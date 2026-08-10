@@ -177,6 +177,10 @@ export async function revokeSession(id: number, current: boolean): Promise<void>
   if (current) clearAccessToken()
 }
 
+export function revokeOtherSessions(): Promise<{ revoked: number }> {
+  return apiRequest<{ revoked: number }>('/api/v1/auth/sessions/others', { method: 'DELETE' })
+}
+
 export function changePassword(currentPassword: string, newPassword: string): Promise<void> {
   return apiRequest<void>('/api/v1/users/me/password', {
     method: 'PATCH',

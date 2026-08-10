@@ -177,6 +177,37 @@ class LoginIntegrationTest {
 				.andExpect(status().isUnauthorized());
 	}
 
+	@Test
+	void shouldRevokeAllOtherSessionsAndKeepCurrentSessionUsable() throws Exception {
+		MvcResult firstLogin = loginWithUserAgent("First browser");
+		loginWithUserAgent("Second browser");
+		MvcResult currentLogin = loginWithUserAgent("Current browser");
+		String accessToken = JsonPath.read(currentLogin.getResponse().getContentAsString(), "$.accessToken");
+		Cookie currentCookie = currentLogin.getResponse().getCookie("shortwave_refresh");
+		assertNotNull(currentCookie);
+
+		mockMvc.perform(delete("/api/v1/auth/sessions/others")
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+				.cookie(currentCookie))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.revoked").value(2));
+
+		mockMvc.perform(get("/api/v1/auth/sessions")
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+				.cookie(currentCookie))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.length()").value(1))
+				.andExpect(jsonPath("$[0].current").value(true));
+
+		mockMvc.perform(post("/api/v1/auth/refresh")
+				.cookie(firstLogin.getResponse().getCookie("shortwave_refresh")))
+				.andExpect(status().isUnauthorized());
+
+		mockMvc.perform(post("/api/v1/auth/refresh").cookie(currentCookie))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.accessToken").isNotEmpty());
+	}
+
 	private MvcResult loginWithUserAgent(String userAgent) throws Exception {
 		return mockMvc.perform(post("/api/v1/auth/login")
 				.header(HttpHeaders.USER_AGENT, userAgent)

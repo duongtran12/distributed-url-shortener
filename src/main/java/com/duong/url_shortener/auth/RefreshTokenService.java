@@ -93,6 +93,18 @@ public class RefreshTokenService {
 		return current;
 	}
 
+	@Transactional
+	public int revokeOtherSessions(Long userId, String currentRawToken) {
+		if (currentRawToken == null || currentRawToken.isBlank()) throw invalidRefreshToken();
+		Instant now = clock.instant();
+		RefreshToken current = repository.findByTokenHash(hash(currentRawToken))
+				.orElseThrow(this::invalidRefreshToken);
+		if (!current.isUsableAt(now) || !current.getUser().getId().equals(userId)) {
+			throw invalidRefreshToken();
+		}
+		return repository.revokeAllOtherSessions(userId, current.getId(), now);
+	}
+
 	private AuthSession session(User user, String rawToken) {
 		return new AuthSession(new LoginResponse(
 				jwtTokenService.createAccessToken(user), "Bearer", jwtTokenService.accessTokenExpiresInSeconds()), rawToken);
