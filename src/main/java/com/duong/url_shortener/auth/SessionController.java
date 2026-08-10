@@ -52,4 +52,12 @@ public class SessionController {
 		}
 		return ResponseEntity.noContent().build();
 	}
+
+	@DeleteMapping("/others")
+	public RevokeSessionsResponse revokeOthers(
+			@AuthenticationPrincipal Jwt jwt,
+			@CookieValue(name = "shortwave_refresh", required = false) String refreshToken) {
+		return new RevokeSessionsResponse(
+				refreshTokenService.revokeOtherSessions(jwt.getClaim("uid"), refreshToken));
+	}
 }

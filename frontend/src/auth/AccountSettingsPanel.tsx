@@ -1,5 +1,5 @@
 import { type FormEvent, useEffect, useState } from 'react'
-import { ApiClientError, changePassword, getActiveSessions, revokeSession, updateProfile, type ActiveSession } from './authApi'
+import { ApiClientError, changePassword, getActiveSessions, revokeOtherSessions, revokeSession, updateProfile, type ActiveSession } from './authApi'
 import type { UserProfile } from './types'
 
 interface AccountSettingsPanelProps {
@@ -22,6 +22,7 @@ export function AccountSettingsPanel({ user, onClose, onPasswordChanged, onProfi
   const [sessionsLoading, setSessionsLoading] = useState(true)
   const [sessionsError, setSessionsError] = useState('')
   const [revokingSessionId, setRevokingSessionId] = useState<number | null>(null)
+  const [revokingOthers, setRevokingOthers] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -49,6 +50,20 @@ export function AccountSettingsPanel({ user, onClose, onPasswordChanged, onProfi
       setSessionsError(caught instanceof ApiClientError ? caught.message : 'Could not revoke the session.')
     } finally {
       setRevokingSessionId(null)
+    }
+  }
+
+  async function handleRevokeOthers() {
+    if (!window.confirm('Sign out every other browser and device?')) return
+    setRevokingOthers(true)
+    setSessionsError('')
+    try {
+      await revokeOtherSessions()
+      setSessions((current) => current.filter((session) => session.current))
+    } catch (caught: unknown) {
+      setSessionsError(caught instanceof ApiClientError ? caught.message : 'Could not revoke other sessions.')
+    } finally {
+      setRevokingOthers(false)
     }
   }
 
@@ -131,7 +146,7 @@ export function AccountSettingsPanel({ user, onClose, onPasswordChanged, onProfi
         </form>
 
         <section className="settings-sessions" aria-labelledby="active-sessions-title">
-          <div className="settings-form-heading"><h3 id="active-sessions-title">Active sessions</h3><p>Review browsers that can refresh access to your account.</p></div>
+          <div className="settings-session-heading"><div className="settings-form-heading"><h3 id="active-sessions-title">Active sessions</h3><p>Review browsers that can refresh access to your account.</p></div>{sessions.filter((session) => !session.current).length > 0 && <button type="button" disabled={revokingOthers} onClick={() => void handleRevokeOthers()}>{revokingOthers ? 'Signing out...' : 'Sign out all others'}</button>}</div>
           {sessionsError && <div className="auth-error" role="alert">{sessionsError}</div>}
           {sessionsLoading ? <div className="settings-session-state">Loading sessions...</div> : sessions.length === 0 ? <div className="settings-session-state">No active sessions.</div> : (
             <div className="settings-session-list">
