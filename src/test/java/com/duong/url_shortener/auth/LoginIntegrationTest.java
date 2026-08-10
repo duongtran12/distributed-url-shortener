@@ -30,7 +30,10 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
-@SpringBootTest(properties = "debug=false")
+@SpringBootTest(properties = {
+		"debug=false",
+		"app.refresh-token.max-active-sessions=3"
+})
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Testcontainers
@@ -206,6 +209,33 @@ class LoginIntegrationTest {
 		mockMvc.perform(post("/api/v1/auth/refresh").cookie(currentCookie))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.accessToken").isNotEmpty());
+	}
+
+	@Test
+	void shouldRevokeOldestSessionWhenActiveSessionLimitIsExceeded() throws Exception {
+		MvcResult oldestLogin = loginWithUserAgent("Oldest browser");
+		loginWithUserAgent("Second browser");
+		loginWithUserAgent("Third browser");
+		MvcResult newestLogin = loginWithUserAgent("Newest browser");
+		String accessToken = JsonPath.read(newestLogin.getResponse().getContentAsString(), "$.accessToken");
+		Cookie newestCookie = newestLogin.getResponse().getCookie("shortwave_refresh");
+		assertNotNull(newestCookie);
+
+		mockMvc.perform(get("/api/v1/auth/sessions")
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+				.cookie(newestCookie))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.length()").value(3))
+				.andExpect(jsonPath("$[0].userAgent").value("Newest browser"))
+				.andExpect(jsonPath("$[0].current").value(true));
+
+		mockMvc.perform(post("/api/v1/auth/refresh")
+				.cookie(oldestLogin.getResponse().getCookie("shortwave_refresh")))
+				.andExpect(status().isUnauthorized())
+				.andExpect(jsonPath("$.code").value("INVALID_REFRESH_TOKEN"));
+
+		mockMvc.perform(post("/api/v1/auth/refresh").cookie(newestCookie))
+				.andExpect(status().isOk());
 	}
 
 	private MvcResult loginWithUserAgent(String userAgent) throws Exception {
