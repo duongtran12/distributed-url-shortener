@@ -82,6 +82,12 @@ function App() {
     setUser(profile)
   }
 
+  function handleAccountDeleted() {
+    setUser(null)
+    setAuthNotice('Your account and its data were permanently deleted.')
+    setAuthView('login')
+  }
+
   function openAuth(view: Exclude<AuthView, null>) {
     setAuthNotice('')
     setAuthView(view)
@@ -102,7 +108,7 @@ function App() {
   }
 
   if (user) {
-    return <DashboardHome user={user} health={health} onLogout={handleLogout} onPasswordChanged={handlePasswordChanged} onProfileUpdated={handleProfileUpdated} />
+    return <DashboardHome user={user} health={health} onLogout={handleLogout} onPasswordChanged={handlePasswordChanged} onProfileUpdated={handleProfileUpdated} onAccountDeleted={handleAccountDeleted} />
   }
 
   return (

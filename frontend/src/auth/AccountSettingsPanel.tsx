@@ -1,5 +1,5 @@
 import { type FormEvent, useEffect, useState } from 'react'
-import { ApiClientError, changePassword, getActiveSessions, revokeOtherSessions, revokeSession, updateProfile, type ActiveSession } from './authApi'
+import { ApiClientError, changePassword, deleteAccount, getActiveSessions, revokeOtherSessions, revokeSession, updateProfile, type ActiveSession } from './authApi'
 import type { UserProfile } from './types'
 
 interface AccountSettingsPanelProps {
@@ -8,9 +8,10 @@ interface AccountSettingsPanelProps {
   onPasswordChanged: () => void
   onProfileUpdated: (profile: UserProfile) => void
   onCurrentSessionRevoked: () => void
+  onAccountDeleted: () => void
 }
 
-export function AccountSettingsPanel({ user, onClose, onPasswordChanged, onProfileUpdated, onCurrentSessionRevoked }: AccountSettingsPanelProps) {
+export function AccountSettingsPanel({ user, onClose, onPasswordChanged, onProfileUpdated, onCurrentSessionRevoked, onAccountDeleted }: AccountSettingsPanelProps) {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
@@ -23,6 +24,9 @@ export function AccountSettingsPanel({ user, onClose, onPasswordChanged, onProfi
   const [sessionsError, setSessionsError] = useState('')
   const [revokingSessionId, setRevokingSessionId] = useState<number | null>(null)
   const [revokingOthers, setRevokingOthers] = useState(false)
+  const [deletingAccount, setDeletingAccount] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
+  const [deleteFieldErrors, setDeleteFieldErrors] = useState<Record<string, string>>({})
 
   useEffect(() => {
     let active = true
@@ -122,6 +126,28 @@ export function AccountSettingsPanel({ user, onClose, onPasswordChanged, onProfi
     }
   }
 
+  async function handleDeleteAccount(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!window.confirm('Permanently delete your account, short links, and analytics? This cannot be undone.')) return
+    setDeletingAccount(true)
+    setDeleteError('')
+    setDeleteFieldErrors({})
+    const form = new FormData(event.currentTarget)
+    try {
+      await deleteAccount(String(form.get('currentPassword') || ''))
+      onAccountDeleted()
+    } catch (caught: unknown) {
+      if (caught instanceof ApiClientError) {
+        setDeleteError(caught.message)
+        setDeleteFieldErrors(caught.fieldErrors)
+      } else {
+        setDeleteError('Could not connect to the API. Confirm that the backend is running.')
+      }
+    } finally {
+      setDeletingAccount(false)
+    }
+  }
+
   return (
     <div className="detail-backdrop settings-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
       <section className="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settings-title">
@@ -169,6 +195,13 @@ export function AccountSettingsPanel({ user, onClose, onPasswordChanged, onProfi
           </div>
           {error && <div className="auth-error" role="alert">{error}</div>}
           <div className="form-actions"><button className="text-button" type="button" onClick={onClose}>Cancel</button><button className="primary-button" type="submit" disabled={submitting}>{submitting ? 'Updating...' : 'Update password'}</button></div>
+        </form>
+
+        <form className="settings-form settings-danger" onSubmit={handleDeleteAccount}>
+          <div className="settings-form-heading"><h3>Delete account</h3><p>Permanently remove your profile, short links, analytics, audit history, and active sessions.</p></div>
+          <label>Current password<input name="currentPassword" type="password" autoComplete="current-password" maxLength={72} required />{deleteFieldErrors.currentPassword && <small>{deleteFieldErrors.currentPassword}</small>}</label>
+          {deleteError && <div className="auth-error" role="alert">{deleteError}</div>}
+          <div className="form-actions"><button className="danger-button" type="submit" disabled={deletingAccount}>{deletingAccount ? 'Deleting account...' : 'Delete account permanently'}</button></div>
         </form>
       </section>
     </div>

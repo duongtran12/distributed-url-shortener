@@ -20,13 +20,14 @@ interface DashboardHomeProps {
   onLogout: () => void
   onPasswordChanged: () => void
   onProfileUpdated: (profile: UserProfile) => void
+  onAccountDeleted: () => void
 }
 
 const EMPTY_PAGE: ShortUrlPage = {
   content: [], page: 0, size: 20, totalElements: 0, totalPages: 0,
 }
 
-export function DashboardHome({ user, health, onLogout, onPasswordChanged, onProfileUpdated }: DashboardHomeProps) {
+export function DashboardHome({ user, health, onLogout, onPasswordChanged, onProfileUpdated, onAccountDeleted }: DashboardHomeProps) {
   const [links, setLinks] = useState<ShortUrlPage>(EMPTY_PAGE)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -535,7 +536,7 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
           )}
 		</section>
 		{selectedAnalyticsLink && <UrlAnalyticsPanel link={selectedAnalyticsLink} onClose={() => setSelectedAnalyticsLink(null)} />}
-		{showAccountSettings && <AccountSettingsPanel user={user} onClose={() => setShowAccountSettings(false)} onPasswordChanged={onPasswordChanged} onProfileUpdated={onProfileUpdated} onCurrentSessionRevoked={onLogout} />}
+		{showAccountSettings && <AccountSettingsPanel user={user} onClose={() => setShowAccountSettings(false)} onPasswordChanged={onPasswordChanged} onProfileUpdated={onProfileUpdated} onCurrentSessionRevoked={onLogout} onAccountDeleted={onAccountDeleted} />}
       </section>
     </main>
   )
