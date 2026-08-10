@@ -3,6 +3,7 @@ package com.duong.url_shortener.auth;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -144,6 +145,47 @@ class LoginIntegrationTest {
 		mockMvc.perform(post("/api/v1/auth/refresh").cookie(refreshToken))
 				.andExpect(status().isUnauthorized())
 				.andExpect(jsonPath("$.code").value("INVALID_REFRESH_TOKEN"));
+	}
+
+	@Test
+	void shouldListOwnedSessionsMarkCurrentAndRevokeAnotherSession() throws Exception {
+		MvcResult firstLogin = loginWithUserAgent("Desktop browser");
+		MvcResult secondLogin = loginWithUserAgent("Mobile browser");
+		String accessToken = JsonPath.read(secondLogin.getResponse().getContentAsString(), "$.accessToken");
+		Cookie currentCookie = secondLogin.getResponse().getCookie("shortwave_refresh");
+		assertNotNull(currentCookie);
+
+		String sessions = mockMvc.perform(get("/api/v1/auth/sessions")
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+				.cookie(currentCookie))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.length()").value(2))
+				.andExpect(jsonPath("$[0].userAgent").value("Mobile browser"))
+				.andExpect(jsonPath("$[0].current").value(true))
+				.andExpect(jsonPath("$[1].userAgent").value("Desktop browser"))
+				.andExpect(jsonPath("$[1].current").value(false))
+				.andReturn().getResponse().getContentAsString();
+		Number firstSessionId = JsonPath.read(sessions, "$[1].id");
+
+		mockMvc.perform(delete("/api/v1/auth/sessions/{id}", firstSessionId.longValue())
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+				.cookie(currentCookie))
+				.andExpect(status().isNoContent());
+
+		mockMvc.perform(post("/api/v1/auth/refresh")
+				.cookie(firstLogin.getResponse().getCookie("shortwave_refresh")))
+				.andExpect(status().isUnauthorized());
+	}
+
+	private MvcResult loginWithUserAgent(String userAgent) throws Exception {
+		return mockMvc.perform(post("/api/v1/auth/login")
+				.header(HttpHeaders.USER_AGENT, userAgent)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{"email":"student@example.com","password":"strong-password"}
+						"""))
+				.andExpect(status().isOk())
+				.andReturn();
 	}
 
 	@Test
