@@ -30,4 +30,26 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
 			+ "WHERE token.user.id = :userId AND token.id <> :currentId "
 			+ "AND token.revokedAt IS NULL AND token.expiresAt > :now")
 	int revokeAllOtherSessions(Long userId, Long currentId, Instant now);
+
+	@Modifying(flushAutomatically = true, clearAutomatically = true)
+	@Query(value = """
+			UPDATE refresh_tokens
+			SET revoked_at = :now
+			WHERE id IN (
+			    SELECT id
+			    FROM refresh_tokens
+			    WHERE user_id = :userId
+			      AND revoked_at IS NULL
+			      AND expires_at > :now
+			    ORDER BY CASE WHEN id = :currentId THEN 1 ELSE 0 END DESC,
+			             created_at DESC,
+			             id DESC
+			    OFFSET :maxActiveSessions
+			)
+			""", nativeQuery = true)
+	int revokeSessionsExceedingLimit(
+			Long userId,
+			Long currentId,
+			Instant now,
+			int maxActiveSessions);
 }

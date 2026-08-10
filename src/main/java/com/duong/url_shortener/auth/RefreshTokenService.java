@@ -41,8 +41,10 @@ public class RefreshTokenService {
 	public AuthSession create(User user, String userAgent) {
 		Instant now = clock.instant();
 		String rawToken = generateToken();
-		repository.save(RefreshToken.create(
+		RefreshToken token = repository.saveAndFlush(RefreshToken.create(
 				user, hash(rawToken), now.plus(properties.expiration()), normalizeUserAgent(userAgent), now));
+		repository.revokeSessionsExceedingLimit(
+				user.getId(), token.getId(), now, properties.maxActiveSessions());
 		return session(user, rawToken);
 	}
 
