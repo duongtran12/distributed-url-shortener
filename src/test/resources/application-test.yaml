@@ -13,6 +13,10 @@ app:
   refresh-token:
     expiration: P30D
     secure-cookie: false
+  refresh-token-cleanup:
+    enabled: false
+    retention: P7D
+    batch-size: 500
   redirect-cache:
     enabled: false
     ttl: PT1H
