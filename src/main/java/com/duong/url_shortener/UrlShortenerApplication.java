@@ -4,6 +4,7 @@ import com.duong.url_shortener.click.ClickTrackingProperties;
 import com.duong.url_shortener.auth.RefreshTokenProperties;
 import com.duong.url_shortener.auth.RefreshTokenCleanupProperties;
 import com.duong.url_shortener.auth.PasswordResetProperties;
+import com.duong.url_shortener.auth.PasswordResetCleanupProperties;
 import com.duong.url_shortener.click.VisitorFingerprintProperties;
 import com.duong.url_shortener.ratelimit.RateLimitProperties;
 import com.duong.url_shortener.shorturl.ShortUrlProperties;
@@ -23,7 +24,8 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 		AuditRetentionProperties.class,
 		RefreshTokenProperties.class,
 		RefreshTokenCleanupProperties.class,
-		PasswordResetProperties.class
+		PasswordResetProperties.class,
+		PasswordResetCleanupProperties.class
 })
 public class UrlShortenerApplication {
 
