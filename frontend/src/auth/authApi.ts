@@ -39,7 +39,9 @@ export class ApiClientError extends Error {
 export async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
   const response = await authorizedRequest(path, options)
 
-  if (response.status === 204) return undefined as T
+  if (response.status === 204 || !response.headers.get('content-type')?.includes('application/json')) {
+    return undefined as T
+  }
   return response.json() as Promise<T>
 }
 
@@ -209,6 +211,20 @@ export async function deleteAccount(currentPassword: string): Promise<void> {
   } catch {
     // The account is already deleted; cookie cleanup can safely fail offline.
   }
+}
+
+export function requestPasswordReset(email: string): Promise<void> {
+  return apiRequest<void>('/api/v1/auth/password-reset/request', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  })
+}
+
+export function confirmPasswordReset(token: string, newPassword: string): Promise<void> {
+  return apiRequest<void>('/api/v1/auth/password-reset/confirm', {
+    method: 'POST',
+    body: JSON.stringify({ token, newPassword }),
+  })
 }
 
 export function getAccessToken() {
