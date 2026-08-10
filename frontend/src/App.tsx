@@ -5,7 +5,7 @@ import type { UserProfile } from './auth/types'
 import { DashboardHome } from './dashboard/DashboardHome'
 import { HealthBadge, type HealthState } from './components/HealthBadge'
 
-type AuthView = 'login' | 'register' | null
+type AuthView = 'login' | 'register' | 'reset' | null
 
 const platformFeatures = [
   { index: '01', title: 'Reliable redirects', detail: 'Redis caching keeps frequently used routes responsive while PostgreSQL remains the source of truth.' },
@@ -18,8 +18,10 @@ function ArrowIcon() {
 }
 
 function App() {
+	const initialResetToken = new URLSearchParams(window.location.search).get('resetToken') || ''
   const [health, setHealth] = useState<HealthState>('checking')
-  const [authView, setAuthView] = useState<AuthView>(null)
+  const [authView, setAuthView] = useState<AuthView>(initialResetToken ? 'reset' : null)
+	const [resetToken, setResetToken] = useState(initialResetToken)
   const [authNotice, setAuthNotice] = useState('')
   const [user, setUser] = useState<UserProfile | null>(null)
   const [sessionLoading, setSessionLoading] = useState(true)
@@ -88,12 +90,28 @@ function App() {
     setAuthView('login')
   }
 
+	function clearResetToken() {
+		setResetToken('')
+		const url = new URL(window.location.href)
+		url.searchParams.delete('resetToken')
+		window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`)
+	}
+
+	function handlePasswordReset() {
+		void logout()
+		setUser(null)
+		clearResetToken()
+		setAuthNotice('Password reset successfully. Sign in with your new password.')
+		setAuthView('login')
+	}
+
   function openAuth(view: Exclude<AuthView, null>) {
     setAuthNotice('')
     setAuthView(view)
   }
 
   function closeAuth() {
+		if (resetToken) clearResetToken()
     setAuthNotice('')
     setAuthView(null)
   }
@@ -107,7 +125,7 @@ function App() {
     )
   }
 
-  if (user) {
+  if (user && authView !== 'reset') {
     return <DashboardHome user={user} health={health} onLogout={handleLogout} onPasswordChanged={handlePasswordChanged} onProfileUpdated={handleProfileUpdated} onAccountDeleted={handleAccountDeleted} />
   }
 
@@ -180,6 +198,9 @@ function App() {
           notice={authNotice}
           onAuthenticated={handleAuthenticated}
           onClose={closeAuth}
+					resetToken={resetToken}
+					onPasswordReset={handlePasswordReset}
+					onResetTokenDismissed={clearResetToken}
         />
       )}
     </main>
