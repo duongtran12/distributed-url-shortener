@@ -83,6 +83,12 @@ app:
     expiration: ${PASSWORD_RESET_EXPIRATION:PT30M}
     frontend-url: ${PASSWORD_RESET_FRONTEND_URL:http://localhost:5173/}
     from-address: ${PASSWORD_RESET_FROM_ADDRESS:no-reply@shortwave.local}
+  password-reset-cleanup:
+    enabled: ${PASSWORD_RESET_CLEANUP_ENABLED:true}
+    retention: ${PASSWORD_RESET_CLEANUP_RETENTION:P7D}
+    batch-size: ${PASSWORD_RESET_CLEANUP_BATCH_SIZE:500}
+    initial-delay: ${PASSWORD_RESET_CLEANUP_INITIAL_DELAY:PT5M}
+    interval: ${PASSWORD_RESET_CLEANUP_INTERVAL:PT24H}
   short-url:
     code-length: ${SHORT_CODE_LENGTH:7}
     max-generation-attempts: ${SHORT_CODE_MAX_GENERATION_ATTEMPTS:5}

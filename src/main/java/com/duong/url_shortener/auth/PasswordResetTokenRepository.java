@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 public interface PasswordResetTokenRepository extends JpaRepository<PasswordResetToken, Long> {
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
@@ -17,4 +19,19 @@ public interface PasswordResetTokenRepository extends JpaRepository<PasswordRese
 	@Query("UPDATE PasswordResetToken token SET token.usedAt = :now "
 			+ "WHERE token.user.id = :userId AND token.usedAt IS NULL")
 	int consumeAllForUser(Long userId, Instant now);
+
+	@Modifying
+	@Transactional
+	@Query(value = """
+			DELETE FROM password_reset_tokens
+			WHERE id IN (
+			    SELECT id
+			    FROM password_reset_tokens
+			    WHERE expires_at < :cutoff
+			       OR used_at < :cutoff
+			    ORDER BY LEAST(expires_at, COALESCE(used_at, expires_at)), id
+			    LIMIT :batchSize
+			)
+			""", nativeQuery = true)
+	int deleteStaleBatch(@Param("cutoff") Instant cutoff, @Param("batchSize") int batchSize);
 }

@@ -10,6 +10,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.duong.url_shortener.user.User;
 import com.duong.url_shortener.user.UserRepository;
 import jakarta.servlet.http.Cookie;
+import java.time.Duration;
+import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -115,6 +117,24 @@ class PasswordResetIntegrationTest {
 
 		verifyNoInteractions(mailSender);
 		assertThat(tokenRepository.count()).isZero();
+	}
+
+	@Test
+	void shouldDeleteOnlyPasswordResetTokensStaleBeyondRetention() {
+		User user = userRepository.findByEmail("student@example.com").orElseThrow();
+		Instant now = Instant.now();
+		Instant cutoff = now.minus(Duration.ofDays(7));
+		PasswordResetToken stale = PasswordResetToken.create(
+				user, "a".repeat(64), now.plus(Duration.ofMinutes(30)));
+		stale.use(cutoff.minusSeconds(1));
+		tokenRepository.save(stale);
+		tokenRepository.saveAndFlush(PasswordResetToken.create(
+				user, "b".repeat(64), now.plus(Duration.ofMinutes(30))));
+
+		int deleted = tokenRepository.deleteStaleBatch(cutoff, 100);
+
+		assertThat(deleted).isEqualTo(1);
+		assertThat(tokenRepository.count()).isEqualTo(1);
 	}
 
 	private org.springframework.test.web.servlet.ResultActions login(String password) throws Exception {
