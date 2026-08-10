@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -39,5 +40,13 @@ public class UserController {
 			@AuthenticationPrincipal Jwt jwt,
 			@Valid @RequestBody ChangePasswordRequest request) {
 		userService.changePassword(jwt.getClaim("uid"), request);
+	}
+
+	@DeleteMapping("/me")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	public void deleteCurrentUser(
+			@AuthenticationPrincipal Jwt jwt,
+			@Valid @RequestBody DeleteAccountRequest request) {
+		userService.deleteAccount(jwt.getClaim("uid"), request);
 	}
 }

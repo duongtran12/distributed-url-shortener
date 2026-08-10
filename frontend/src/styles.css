@@ -260,6 +260,11 @@ h1 em { color: #65e7ae; font-style: normal; font-weight: 700; }
 .settings-form input { width: 100%; padding: 13px 14px; color: #edf7f2; background: #07130f; border: 1px solid #294238; border-radius: 5px; outline: none; font: 14px 'Manrope', sans-serif; text-transform: none; letter-spacing: 0; }
 .settings-form input:focus { border-color: #55e6a8; box-shadow: 0 0 0 3px rgba(85,230,168,.08); }
 .settings-form small { color: #ff907d; text-transform: none; letter-spacing: 0; }
+.settings-danger { border-top: 1px solid rgba(255,144,125,.28); background: rgba(255,100,82,.025); }
+.settings-danger h3 { color: #ff9b89; }
+.danger-button { padding: 11px 14px; color: #ffad9f; background: rgba(255,100,82,.06); border: 1px solid #6b4038; border-radius: 5px; cursor: pointer; font-weight: 700; }
+.danger-button:hover:not(:disabled) { color: #ffd0c7; background: rgba(255,100,82,.12); border-color: #a65b4d; }
+.danger-button:disabled { cursor: wait; opacity: .55; }
 .settings-sessions { display: grid; gap: 18px; padding: 28px 32px; border-bottom: 1px solid #284138; }
 .settings-session-heading { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
 .settings-session-heading > button { flex: none; padding: 9px 11px; color: #ff9b89; background: transparent; border: 1px solid #5e3d36; border-radius: 4px; cursor: pointer; font-size: 10px; }

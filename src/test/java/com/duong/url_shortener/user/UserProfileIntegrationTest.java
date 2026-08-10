@@ -1,12 +1,17 @@
 package com.duong.url_shortener.user;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.jayway.jsonpath.JsonPath;
+import jakarta.servlet.http.Cookie;
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,9 +20,11 @@ import org.springframework.boot.testcontainers.service.connection.ServiceConnect
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -41,6 +48,9 @@ class UserProfileIntegrationTest {
 
 	@Autowired
 	private PasswordEncoder passwordEncoder;
+
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
 
 	@BeforeEach
 	void setUpUser() {
@@ -186,6 +196,67 @@ class UserProfileIntegrationTest {
 						"""))
 				.andExpect(status().isBadRequest())
 				.andExpect(jsonPath("$.code").value("PASSWORD_UNCHANGED"));
+	}
+
+	@Test
+	void shouldDeleteAccountAndAllOwnedDataWhenPasswordIsCorrect() throws Exception {
+		MvcResult login = loginWithPassword("strong-password")
+				.andExpect(status().isOk())
+				.andReturn();
+		String accessToken = JsonPath.read(login.getResponse().getContentAsString(), "$.accessToken");
+		Cookie refreshToken = login.getResponse().getCookie("shortwave_refresh");
+
+		String createdUrl = mockMvc.perform(post("/api/v1/urls")
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{"originalUrl":"https://example.com/account-deletion","customAlias":"delete-me"}
+						"""))
+				.andExpect(status().isCreated())
+				.andReturn().getResponse().getContentAsString();
+		String shortCode = JsonPath.read(createdUrl, "$.shortCode");
+		jdbcTemplate.update("""
+				INSERT INTO click_events (
+				    event_id, short_code, clicked_at, created_at,
+				    referrer, browser, operating_system, device_type)
+				VALUES (?, ?, ?, ?, 'direct', 'Chrome', 'Windows', 'DESKTOP')
+				""", UUID.randomUUID(), shortCode, Timestamp.from(Instant.now()), Timestamp.from(Instant.now()));
+
+		mockMvc.perform(delete("/api/v1/users/me")
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{"currentPassword":"strong-password"}
+						"""))
+				.andExpect(status().isNoContent());
+
+		org.assertj.core.api.Assertions.assertThat(userRepository.existsByEmail("student@example.com")).isFalse();
+		org.assertj.core.api.Assertions.assertThat(jdbcTemplate.queryForObject(
+				"SELECT COUNT(*) FROM click_events WHERE short_code = ?", Integer.class, shortCode)).isZero();
+
+		mockMvc.perform(get("/api/v1/users/me")
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken))
+				.andExpect(status().isUnauthorized())
+				.andExpect(jsonPath("$.code").value("INVALID_ACCESS_TOKEN"));
+		mockMvc.perform(post("/api/v1/auth/refresh").cookie(refreshToken))
+				.andExpect(status().isUnauthorized());
+		loginWithPassword("strong-password").andExpect(status().isUnauthorized());
+	}
+
+	@Test
+	void shouldRejectAccountDeletionWhenPasswordIsIncorrect() throws Exception {
+		String accessToken = login();
+
+		mockMvc.perform(delete("/api/v1/users/me")
+				.header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{"currentPassword":"incorrect-password"}
+						"""))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("INVALID_CURRENT_PASSWORD"));
+
+		org.assertj.core.api.Assertions.assertThat(userRepository.existsByEmail("student@example.com")).isTrue();
 	}
 
 	private String login() throws Exception {
