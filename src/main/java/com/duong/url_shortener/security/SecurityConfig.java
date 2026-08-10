@@ -47,7 +47,9 @@ public class SecurityConfig {
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.authorizeHttpRequests(authorize -> authorize
 						.requestMatchers(HttpMethod.POST, "/api/v1/auth/register", "/api/v1/auth/login",
-								"/api/v1/auth/refresh", "/api/v1/auth/logout").permitAll()
+								"/api/v1/auth/refresh", "/api/v1/auth/logout",
+								"/api/v1/auth/password-reset/request",
+								"/api/v1/auth/password-reset/confirm").permitAll()
 						.requestMatchers(HttpMethod.GET, "/{shortCode}").permitAll()
 						.requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
 						.requestMatchers("/actuator/prometheus").permitAll()

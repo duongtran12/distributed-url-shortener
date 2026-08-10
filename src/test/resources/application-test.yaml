@@ -6,6 +6,11 @@ logging:
   level:
     org.testcontainers: INFO
 
+management:
+  health:
+    mail:
+      enabled: false
+
 app:
   jwt:
     secret: MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE=
@@ -17,6 +22,10 @@ app:
     enabled: false
     retention: P7D
     batch-size: 500
+  password-reset:
+    expiration: PT30M
+    frontend-url: http://localhost:5173/
+    from-address: no-reply@shortwave.test
   redirect-cache:
     enabled: false
     ttl: PT1H
