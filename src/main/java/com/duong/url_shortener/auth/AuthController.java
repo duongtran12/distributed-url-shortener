@@ -19,10 +19,15 @@ public class AuthController {
 
 	private final AuthService authService;
 	private final RefreshTokenProperties refreshTokenProperties;
+	private final PasswordResetService passwordResetService;
 
-	public AuthController(AuthService authService, RefreshTokenProperties refreshTokenProperties) {
+	public AuthController(
+			AuthService authService,
+			RefreshTokenProperties refreshTokenProperties,
+			PasswordResetService passwordResetService) {
 		this.authService = authService;
 		this.refreshTokenProperties = refreshTokenProperties;
+		this.passwordResetService = passwordResetService;
 	}
 
 	@PostMapping("/register")
@@ -52,6 +57,18 @@ public class AuthController {
 		return ResponseEntity.noContent()
 				.header(HttpHeaders.SET_COOKIE, refreshCookie("", 0).toString())
 				.build();
+	}
+
+	@PostMapping("/password-reset/request")
+	@ResponseStatus(HttpStatus.ACCEPTED)
+	public void requestPasswordReset(@Valid @RequestBody PasswordResetRequest request) {
+		passwordResetService.requestReset(request);
+	}
+
+	@PostMapping("/password-reset/confirm")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	public void confirmPasswordReset(@Valid @RequestBody PasswordResetConfirmRequest request) {
+		passwordResetService.resetPassword(request);
 	}
 
 	private ResponseEntity<LoginResponse> sessionResponse(AuthSession session) {
