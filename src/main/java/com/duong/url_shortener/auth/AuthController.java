@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -31,14 +32,17 @@ public class AuthController {
 	}
 
 	@PostMapping("/login")
-	public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
-		return sessionResponse(authService.login(request));
+	public ResponseEntity<LoginResponse> login(
+			@Valid @RequestBody LoginRequest request,
+			@RequestHeader(name = HttpHeaders.USER_AGENT, required = false) String userAgent) {
+		return sessionResponse(authService.login(request, userAgent));
 	}
 
 	@PostMapping("/refresh")
 	public ResponseEntity<LoginResponse> refresh(
-			@CookieValue(name = "shortwave_refresh", required = false) String refreshToken) {
-		return sessionResponse(authService.refresh(refreshToken == null ? "" : refreshToken));
+			@CookieValue(name = "shortwave_refresh", required = false) String refreshToken,
+			@RequestHeader(name = HttpHeaders.USER_AGENT, required = false) String userAgent) {
+		return sessionResponse(authService.refresh(refreshToken == null ? "" : refreshToken, userAgent));
 	}
 
 	@PostMapping("/logout")

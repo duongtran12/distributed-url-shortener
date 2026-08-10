@@ -37,17 +37,25 @@ public class RefreshToken {
 	@Column(name = "created_at", nullable = false, updatable = false)
 	private Instant createdAt;
 
+	@Column(name = "user_agent", nullable = false, length = 255)
+	private String userAgent;
+
+	@Column(name = "last_used_at", nullable = false)
+	private Instant lastUsedAt;
+
 	protected RefreshToken() {
 	}
 
-	private RefreshToken(User user, String tokenHash, Instant expiresAt) {
+	private RefreshToken(User user, String tokenHash, Instant expiresAt, String userAgent, Instant now) {
 		this.user = user;
 		this.tokenHash = tokenHash;
 		this.expiresAt = expiresAt;
+		this.userAgent = userAgent;
+		this.lastUsedAt = now;
 	}
 
-	static RefreshToken create(User user, String tokenHash, Instant expiresAt) {
-		return new RefreshToken(user, tokenHash, expiresAt);
+	static RefreshToken create(User user, String tokenHash, Instant expiresAt, String userAgent, Instant now) {
+		return new RefreshToken(user, tokenHash, expiresAt, userAgent, now);
 	}
 
 	@PrePersist
@@ -65,5 +73,29 @@ public class RefreshToken {
 
 	User getUser() {
 		return user;
+	}
+
+	Long getId() {
+		return id;
+	}
+
+	String getTokenHash() {
+		return tokenHash;
+	}
+
+	Instant getExpiresAt() {
+		return expiresAt;
+	}
+
+	Instant getCreatedAt() {
+		return createdAt;
+	}
+
+	String getUserAgent() {
+		return userAgent;
+	}
+
+	Instant getLastUsedAt() {
+		return lastUsedAt;
 	}
 }

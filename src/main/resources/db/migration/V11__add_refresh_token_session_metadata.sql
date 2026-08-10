@@ -1,0 +1,7 @@
+ALTER TABLE refresh_tokens
+    ADD COLUMN user_agent VARCHAR(255) NOT NULL DEFAULT 'Unknown client',
+    ADD COLUMN last_used_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP;
+
+ALTER TABLE refresh_tokens
+    ALTER COLUMN user_agent DROP DEFAULT,
+    ALTER COLUMN last_used_at DROP DEFAULT;

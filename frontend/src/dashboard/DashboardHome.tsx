@@ -535,7 +535,7 @@ export function DashboardHome({ user, health, onLogout, onPasswordChanged, onPro
           )}
 		</section>
 		{selectedAnalyticsLink && <UrlAnalyticsPanel link={selectedAnalyticsLink} onClose={() => setSelectedAnalyticsLink(null)} />}
-		{showAccountSettings && <AccountSettingsPanel user={user} onClose={() => setShowAccountSettings(false)} onPasswordChanged={onPasswordChanged} onProfileUpdated={onProfileUpdated} />}
+		{showAccountSettings && <AccountSettingsPanel user={user} onClose={() => setShowAccountSettings(false)} onPasswordChanged={onPasswordChanged} onProfileUpdated={onProfileUpdated} onCurrentSessionRevoked={onLogout} />}
       </section>
     </main>
   )

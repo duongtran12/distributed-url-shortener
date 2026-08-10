@@ -11,6 +11,15 @@ interface LoginResponse {
   expiresIn: number
 }
 
+export interface ActiveSession {
+  id: number
+  userAgent: string
+  createdAt: string
+  lastUsedAt: string
+  expiresAt: string
+  current: boolean
+}
+
 export class ApiClientError extends Error {
   readonly code?: string
   readonly status: number
@@ -157,6 +166,15 @@ export async function logout(): Promise<void> {
   } catch {
     // Local logout still succeeds when the backend is unavailable.
   }
+}
+
+export function getActiveSessions(): Promise<ActiveSession[]> {
+  return apiRequest<ActiveSession[]>('/api/v1/auth/sessions')
+}
+
+export async function revokeSession(id: number, current: boolean): Promise<void> {
+  await apiRequest<void>(`/api/v1/auth/sessions/${id}`, { method: 'DELETE' })
+  if (current) clearAccessToken()
 }
 
 export function changePassword(currentPassword: string, newPassword: string): Promise<void> {

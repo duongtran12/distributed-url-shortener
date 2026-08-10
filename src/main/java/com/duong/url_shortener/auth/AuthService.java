@@ -33,7 +33,7 @@ public class AuthService {
 	}
 
 	@Transactional
-	public AuthSession login(LoginRequest request) {
+	public AuthSession login(LoginRequest request, String userAgent) {
 		String normalizedEmail = EmailNormalizer.normalize(request.email());
 
 		try {
@@ -49,11 +49,11 @@ public class AuthService {
 						"INVALID_CREDENTIALS",
 						"Invalid email or password"));
 
-		return refreshTokenService.create(user);
+		return refreshTokenService.create(user, userAgent);
 	}
 
-	public AuthSession refresh(String refreshToken) {
-		return refreshTokenService.rotate(refreshToken);
+	public AuthSession refresh(String refreshToken, String userAgent) {
+		return refreshTokenService.rotate(refreshToken, userAgent);
 	}
 
 	public void logout(String refreshToken) {

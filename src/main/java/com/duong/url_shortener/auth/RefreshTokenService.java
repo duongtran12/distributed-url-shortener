@@ -8,6 +8,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.HexFormat;
+import java.util.List;
 
 import com.duong.url_shortener.common.exception.ApiException;
 import com.duong.url_shortener.security.JwtTokenService;
@@ -37,14 +38,16 @@ public class RefreshTokenService {
 	}
 
 	@Transactional
-	public AuthSession create(User user) {
+	public AuthSession create(User user, String userAgent) {
+		Instant now = clock.instant();
 		String rawToken = generateToken();
-		repository.save(RefreshToken.create(user, hash(rawToken), clock.instant().plus(properties.expiration())));
+		repository.save(RefreshToken.create(
+				user, hash(rawToken), now.plus(properties.expiration()), normalizeUserAgent(userAgent), now));
 		return session(user, rawToken);
 	}
 
 	@Transactional
-	public AuthSession rotate(String rawToken) {
+	public AuthSession rotate(String rawToken, String userAgent) {
 		Instant now = clock.instant();
 		RefreshToken current = repository.findByTokenHash(hash(rawToken))
 				.orElseThrow(this::invalidRefreshToken);
@@ -52,7 +55,7 @@ public class RefreshTokenService {
 			throw invalidRefreshToken();
 		}
 		current.revoke(now);
-		return create(current.getUser());
+		return create(current.getUser(), userAgent);
 	}
 
 	@Transactional
@@ -69,6 +72,27 @@ public class RefreshTokenService {
 		repository.revokeAllByUserId(userId, clock.instant());
 	}
 
+	@Transactional(readOnly = true)
+	public List<SessionResponse> findActiveSessions(Long userId, String currentRawToken) {
+		String currentHash = currentRawToken == null || currentRawToken.isBlank() ? "" : hash(currentRawToken);
+		return repository.findAllByUserIdAndRevokedAtIsNullAndExpiresAtAfterOrderByCreatedAtDesc(
+				userId, clock.instant()).stream()
+				.map(token -> SessionResponse.from(token, currentHash))
+				.toList();
+	}
+
+	@Transactional
+	public boolean revokeSession(Long userId, Long sessionId, String currentRawToken) {
+		RefreshToken token = repository.findByIdAndUserId(sessionId, userId)
+				.orElseThrow(() -> new ApiException(
+						HttpStatus.NOT_FOUND, "SESSION_NOT_FOUND", "The session was not found"));
+		boolean current = currentRawToken != null
+				&& !currentRawToken.isBlank()
+				&& token.getTokenHash().equals(hash(currentRawToken));
+		if (token.isUsableAt(clock.instant())) token.revoke(clock.instant());
+		return current;
+	}
+
 	private AuthSession session(User user, String rawToken) {
 		return new AuthSession(new LoginResponse(
 				jwtTokenService.createAccessToken(user), "Bearer", jwtTokenService.accessTokenExpiresInSeconds()), rawToken);
@@ -78,6 +102,12 @@ public class RefreshTokenService {
 		byte[] bytes = new byte[32];
 		SECURE_RANDOM.nextBytes(bytes);
 		return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+	}
+
+	private String normalizeUserAgent(String userAgent) {
+		if (userAgent == null || userAgent.isBlank()) return "Unknown client";
+		String normalized = userAgent.strip();
+		return normalized.length() <= 255 ? normalized : normalized.substring(0, 255);
 	}
 
 	private String hash(String token) {

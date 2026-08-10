@@ -1,5 +1,5 @@
-import { type FormEvent, useState } from 'react'
-import { ApiClientError, changePassword, updateProfile } from './authApi'
+import { type FormEvent, useEffect, useState } from 'react'
+import { ApiClientError, changePassword, getActiveSessions, revokeSession, updateProfile, type ActiveSession } from './authApi'
 import type { UserProfile } from './types'
 
 interface AccountSettingsPanelProps {
@@ -7,9 +7,10 @@ interface AccountSettingsPanelProps {
   onClose: () => void
   onPasswordChanged: () => void
   onProfileUpdated: (profile: UserProfile) => void
+  onCurrentSessionRevoked: () => void
 }
 
-export function AccountSettingsPanel({ user, onClose, onPasswordChanged, onProfileUpdated }: AccountSettingsPanelProps) {
+export function AccountSettingsPanel({ user, onClose, onPasswordChanged, onProfileUpdated, onCurrentSessionRevoked }: AccountSettingsPanelProps) {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
@@ -17,6 +18,39 @@ export function AccountSettingsPanel({ user, onClose, onPasswordChanged, onProfi
   const [profileError, setProfileError] = useState('')
   const [profileFieldErrors, setProfileFieldErrors] = useState<Record<string, string>>({})
   const [profileSaved, setProfileSaved] = useState(false)
+  const [sessions, setSessions] = useState<ActiveSession[]>([])
+  const [sessionsLoading, setSessionsLoading] = useState(true)
+  const [sessionsError, setSessionsError] = useState('')
+  const [revokingSessionId, setRevokingSessionId] = useState<number | null>(null)
+
+  useEffect(() => {
+    let active = true
+    getActiveSessions()
+      .then((result) => { if (active) setSessions(result) })
+      .catch((caught: unknown) => {
+        if (active) setSessionsError(caught instanceof ApiClientError ? caught.message : 'Could not load active sessions.')
+      })
+      .finally(() => { if (active) setSessionsLoading(false) })
+    return () => { active = false }
+  }, [])
+
+  async function handleRevokeSession(session: ActiveSession) {
+    setRevokingSessionId(session.id)
+    setSessionsError('')
+    try {
+      await revokeSession(session.id, session.current)
+      if (session.current) {
+        onClose()
+        onCurrentSessionRevoked()
+        return
+      }
+      setSessions((current) => current.filter((item) => item.id !== session.id))
+    } catch (caught: unknown) {
+      setSessionsError(caught instanceof ApiClientError ? caught.message : 'Could not revoke the session.')
+    } finally {
+      setRevokingSessionId(null)
+    }
+  }
 
   async function handleProfileSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -95,6 +129,21 @@ export function AccountSettingsPanel({ user, onClose, onPasswordChanged, onProfi
           {profileSaved && <div className="settings-success" role="status">Profile updated successfully.</div>}
           <div className="form-actions"><button className="primary-button" type="submit" disabled={profileSubmitting}>{profileSubmitting ? 'Saving...' : 'Save profile'}</button></div>
         </form>
+
+        <section className="settings-sessions" aria-labelledby="active-sessions-title">
+          <div className="settings-form-heading"><h3 id="active-sessions-title">Active sessions</h3><p>Review browsers that can refresh access to your account.</p></div>
+          {sessionsError && <div className="auth-error" role="alert">{sessionsError}</div>}
+          {sessionsLoading ? <div className="settings-session-state">Loading sessions...</div> : sessions.length === 0 ? <div className="settings-session-state">No active sessions.</div> : (
+            <div className="settings-session-list">
+              {sessions.map((session) => (
+                <article className="settings-session" key={session.id}>
+                  <div><strong>{session.current ? 'This browser' : 'Signed-in browser'}</strong>{session.current && <span>Current</span>}<p title={session.userAgent}>{session.userAgent}</p><small>Last used {new Date(session.lastUsedAt).toLocaleString()} · Expires {new Date(session.expiresAt).toLocaleDateString()}</small></div>
+                  <button type="button" disabled={revokingSessionId === session.id} onClick={() => void handleRevokeSession(session)}>{revokingSessionId === session.id ? 'Revoking...' : session.current ? 'Sign out' : 'Revoke'}</button>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
 
         <form className="settings-form" onSubmit={handleSubmit}>
           <div className="settings-form-heading"><h3>Change password</h3><p>You will be signed out after the password is updated.</p></div>
