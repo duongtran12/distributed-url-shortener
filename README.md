@@ -95,6 +95,12 @@ The production-like Compose stack builds the Spring Boot and React images, serve
 
 Stop the stack with `docker compose down`. This preserves named volumes; adding `--volumes` also deletes the local database and broker data.
 
+## API documentation
+
+Interactive OpenAPI documentation is available at `http://localhost:8080/swagger-ui.html` when the application is running. Public authentication and redirect operations can be called directly. For protected operations, sign in through `/api/v1/auth/login`, copy the returned access token, select **Authorize**, and enter the token as the bearer credential.
+
+The machine-readable OpenAPI document is available at `http://localhost:8080/v3/api-docs`.
+
 ## Metrics
 
 The Docker stack runs Prometheus at `http://localhost:9090`. It discovers and scrapes every backend replica through Docker DNS.
