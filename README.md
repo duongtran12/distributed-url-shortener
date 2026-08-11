@@ -107,6 +107,10 @@ The redirect path has a Dockerized k6 performance test. It verifies redirect sta
 
 After starting the Docker stack, run `.\ops\smoke-test.ps1` to verify the frontend, backend health, OpenAPI document, authentication boundary and a real short-link redirect. The same smoke test runs automatically in continuous integration.
 
+## Security automation
+
+GitHub Actions runs CodeQL analysis for Java and TypeScript and reviews dependency changes introduced by pull requests. The frontend CI also rejects high or critical npm advisories. Dependabot checks Maven, npm, Docker, Docker Compose and GitHub Actions dependencies every week; review and merge its pull requests only after all CI checks pass.
+
 ## API documentation
 
 Interactive OpenAPI documentation is available at `http://localhost:8080/swagger-ui.html` when the application is running. Public authentication and redirect operations can be called directly. For protected operations, sign in through `/api/v1/auth/login`, copy the returned access token, select **Authorize**, and enter the token as the bearer credential.

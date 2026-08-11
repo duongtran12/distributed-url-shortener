@@ -1,0 +1,68 @@
+version: 2
+
+updates:
+  - package-ecosystem: maven
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "04:00"
+      timezone: Asia/Ho_Chi_Minh
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: build(deps)
+
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+      day: monday
+      time: "04:00"
+      timezone: Asia/Ho_Chi_Minh
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: build(deps)
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "04:00"
+      timezone: Asia/Ho_Chi_Minh
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: build(deps)
+
+  - package-ecosystem: docker
+    directory: /frontend
+    schedule:
+      interval: weekly
+      day: monday
+      time: "04:00"
+      timezone: Asia/Ho_Chi_Minh
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: build(deps)
+
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "04:00"
+      timezone: Asia/Ho_Chi_Minh
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: build(deps)
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "04:00"
+      timezone: Asia/Ho_Chi_Minh
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: ci(deps)
