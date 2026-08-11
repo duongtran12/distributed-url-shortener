@@ -1,6 +1,7 @@
 package com.duong.url_shortener;
 
 import com.duong.url_shortener.click.ClickTrackingProperties;
+import com.duong.url_shortener.click.ClickEventRetentionProperties;
 import com.duong.url_shortener.auth.RefreshTokenProperties;
 import com.duong.url_shortener.auth.RefreshTokenCleanupProperties;
 import com.duong.url_shortener.auth.PasswordResetProperties;
@@ -19,6 +20,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 		ShortUrlProperties.class,
 		RedirectCacheProperties.class,
 		ClickTrackingProperties.class,
+		ClickEventRetentionProperties.class,
 		VisitorFingerprintProperties.class,
 		RateLimitProperties.class,
 		AuditRetentionProperties.class,

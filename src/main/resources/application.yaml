@@ -114,6 +114,12 @@ app:
     dead-letter-exchange: url-shortener.clicks.dlx
     dead-letter-queue: url-shortener.clicks.dead
     dead-letter-routing-key: click.dead
+  click-event-retention:
+    enabled: ${CLICK_EVENT_RETENTION_ENABLED:true}
+    retention: ${CLICK_EVENT_RETENTION_PERIOD:P365D}
+    batch-size: ${CLICK_EVENT_RETENTION_BATCH_SIZE:500}
+    initial-delay: ${CLICK_EVENT_RETENTION_INITIAL_DELAY:PT5M}
+    interval: ${CLICK_EVENT_RETENTION_INTERVAL:PT24H}
   visitor-fingerprint:
     secret: ${VISITOR_HASH_SECRET:${app.jwt.secret}}
   rate-limit:

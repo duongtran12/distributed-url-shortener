@@ -41,6 +41,9 @@ class ClickEventStoreIntegrationTest {
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
 
+	@Autowired
+	private ClickEventRetentionRepository retentionRepository;
+
 	private ShortUrl shortUrl;
 
 	@BeforeEach
@@ -81,5 +84,24 @@ class ClickEventStoreIntegrationTest {
 				"SELECT visitor_hash FROM click_events WHERE event_id = ?",
 				String.class,
 				event.eventId()));
+	}
+
+	@Test
+	void shouldDeleteOnlyRawClickEventsOlderThanRetentionCutoff() {
+		ClickEvent oldEvent = new ClickEvent(
+				UUID.randomUUID(), "tracked", Instant.parse("2025-01-01T00:00:00Z"),
+				null, null, "a".repeat(64));
+		ClickEvent retainedEvent = new ClickEvent(
+				UUID.randomUUID(), "tracked", Instant.parse("2026-01-01T00:00:00Z"),
+				null, null, "b".repeat(64));
+		clickEventStore.record(oldEvent);
+		clickEventStore.record(retainedEvent);
+
+		int deleted = retentionRepository.deleteOldestBatch(
+				Instant.parse("2025-08-10T00:00:00Z"), 100);
+
+		assertEquals(1, deleted);
+		assertEquals(1, jdbcTemplate.queryForObject("SELECT COUNT(*) FROM click_events", Integer.class));
+		assertEquals(2, shortUrlRepository.findById(shortUrl.getId()).orElseThrow().getClickCount());
 	}
 }
