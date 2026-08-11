@@ -103,6 +103,10 @@ PowerShell scripts for creating and restoring PostgreSQL custom-format backups a
 
 The redirect path has a Dockerized k6 performance test. It verifies redirect status, destination and request tracing without following the destination URL. See [`load-testing/README.md`](load-testing/README.md) for safe defaults, thresholds and higher-rate test instructions.
 
+## Stack smoke test
+
+After starting the Docker stack, run `.\ops\smoke-test.ps1` to verify the frontend, backend health, OpenAPI document, authentication boundary and a real short-link redirect. The same smoke test runs automatically in continuous integration.
+
 ## API documentation
 
 Interactive OpenAPI documentation is available at `http://localhost:8080/swagger-ui.html` when the application is running. Public authentication and redirect operations can be called directly. For protected operations, sign in through `/api/v1/auth/login`, copy the returned access token, select **Authorize**, and enter the token as the bearer credential.

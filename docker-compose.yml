@@ -64,6 +64,7 @@ services:
     restart: unless-stopped
 
   backend:
+    image: url-shortener-backend:${IMAGE_TAG:-local}
     build:
       context: .
       dockerfile: Dockerfile
@@ -195,6 +196,7 @@ services:
     restart: unless-stopped
 
   nginx:
+    image: url-shortener-frontend:${IMAGE_TAG:-local}
     build:
       context: frontend
       dockerfile: Dockerfile
