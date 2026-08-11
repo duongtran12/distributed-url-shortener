@@ -101,6 +101,10 @@ Interactive OpenAPI documentation is available at `http://localhost:8080/swagger
 
 The machine-readable OpenAPI document is available at `http://localhost:8080/v3/api-docs`.
 
+## Request tracing
+
+Every HTTP response includes an `X-Request-ID` header. Nginx generates the identifier at the application gateway and forwards it to the backend. Backend log lines include the same identifier, making it possible to correlate a browser/API response with both Nginx access logs and Spring Boot application logs. Direct backend requests may supply an identifier containing letters, numbers, `.`, `_`, or `-` with a maximum length of 64 characters; invalid values are replaced with a UUID.
+
 ## Metrics
 
 The Docker stack runs Prometheus at `http://localhost:9090`. It discovers and scrapes every backend replica through Docker DNS.

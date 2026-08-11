@@ -52,6 +52,8 @@ server:
 logging:
   level:
     root: INFO
+  pattern:
+    level: "%5p [requestId:%X{requestId:-none}]"
 
 springdoc:
   api-docs:
