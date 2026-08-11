@@ -93,6 +93,12 @@ app:
     expiration: ${EMAIL_VERIFICATION_EXPIRATION:PT24H}
     frontend-url: ${EMAIL_VERIFICATION_FRONTEND_URL:http://localhost:5173/}
     from-address: ${EMAIL_VERIFICATION_FROM_ADDRESS:no-reply@shortwave.local}
+  registration-cleanup:
+    enabled: ${REGISTRATION_CLEANUP_ENABLED:true}
+    retention: ${REGISTRATION_CLEANUP_RETENTION:P7D}
+    batch-size: ${REGISTRATION_CLEANUP_BATCH_SIZE:500}
+    initial-delay: ${REGISTRATION_CLEANUP_INITIAL_DELAY:PT5M}
+    interval: ${REGISTRATION_CLEANUP_INTERVAL:PT24H}
   short-url:
     code-length: ${SHORT_CODE_LENGTH:7}
     max-generation-attempts: ${SHORT_CODE_MAX_GENERATION_ATTEMPTS:5}

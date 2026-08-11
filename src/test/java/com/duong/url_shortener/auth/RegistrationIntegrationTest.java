@@ -1,5 +1,8 @@
 package com.duong.url_shortener.auth;
 
+import java.sql.Timestamp;
+import java.time.Instant;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -52,6 +55,9 @@ class RegistrationIntegrationTest {
 
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
+
+	@Autowired
+	private RegistrationCleanupRepository registrationCleanupRepository;
 
 	@MockitoBean
 	private JavaMailSender mailSender;
@@ -164,6 +170,32 @@ class RegistrationIntegrationTest {
 				.andExpect(status().isAccepted());
 
 		verifyNoInteractions(mailSender);
+		assertThat(tokenRepository.count()).isZero();
+	}
+
+	@Test
+	void shouldDeleteOnlyAbandonedUnverifiedRegistrations() throws Exception {
+		mockMvc.perform(post("/api/v1/auth/register")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{
+						  "email":"abandoned@example.com",
+						  "password":"strong-password",
+						  "displayName":"Abandoned User"
+						}
+						"""))
+				.andExpect(status().isCreated());
+		userRepository.saveAndFlush(User.create(
+				"verified@example.com", "encoded-password", "Verified User"));
+		Instant oldCreationTime = Instant.parse("2026-07-01T00:00:00Z");
+		jdbcTemplate.update("UPDATE users SET created_at = ?", Timestamp.from(oldCreationTime));
+
+		int deleted = registrationCleanupRepository.deleteOldestBatch(
+				Instant.parse("2026-08-04T00:00:00Z"), 100);
+
+		assertThat(deleted).isEqualTo(1);
+		assertThat(userRepository.findByEmail("abandoned@example.com")).isEmpty();
+		assertThat(userRepository.findByEmail("verified@example.com")).isPresent();
 		assertThat(tokenRepository.count()).isZero();
 	}
 

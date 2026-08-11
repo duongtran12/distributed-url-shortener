@@ -34,6 +34,10 @@ app:
     expiration: PT24H
     frontend-url: http://localhost:5173/
     from-address: no-reply@shortwave.test
+  registration-cleanup:
+    enabled: false
+    retention: P7D
+    batch-size: 500
   redirect-cache:
     enabled: false
     ttl: PT1H
