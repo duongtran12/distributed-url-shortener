@@ -34,3 +34,17 @@ Invoke-RestMethod http://localhost:8080/actuator/health
 ```
 
 Never restore an untrusted archive. Create a fresh backup of the current database before any planned restoration.
+
+## Docker stack smoke test
+
+With the application stack running, verify the frontend, gateway, backend health, OpenAPI document, authentication boundary and redirect path:
+
+```powershell
+.\ops\smoke-test.ps1
+```
+
+The script creates a uniquely named database fixture, verifies a real HTTP 302 response without following the destination, and removes the fixture in a `finally` block. Use `-BaseUrl` when the stack is exposed on a non-default port:
+
+```powershell
+.\ops\smoke-test.ps1 -BaseUrl 'http://localhost:8090'
+```
