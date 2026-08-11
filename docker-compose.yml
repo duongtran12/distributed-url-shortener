@@ -51,7 +51,7 @@ services:
     restart: unless-stopped
 
   mailpit:
-    image: axllent/mailpit:v1.27.8
+    image: axllent/mailpit:v1.30.6
     container_name: url-shortener-mailpit
     ports:
       - "${MAILPIT_SMTP_PORT:-1025}:1025"
