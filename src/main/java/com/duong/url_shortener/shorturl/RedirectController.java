@@ -4,6 +4,7 @@ import java.time.Instant;
 
 import com.duong.url_shortener.click.ClickEventPublisher;
 import com.duong.url_shortener.click.VisitorFingerprintService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@SecurityRequirements
 public class RedirectController {
 
 	private final RedirectService redirectService;

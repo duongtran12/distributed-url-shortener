@@ -53,6 +53,16 @@ logging:
   level:
     root: INFO
 
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+    display-request-duration: true
+    persist-authorization: true
+
 management:
   server:
     port: ${MANAGEMENT_SERVER_PORT:${SERVER_PORT:8080}}
