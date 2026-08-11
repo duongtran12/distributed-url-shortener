@@ -123,6 +123,10 @@ services:
       AUDIT_RETENTION_INTERVAL: ${AUDIT_RETENTION_INTERVAL:-PT24H}
       RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}
       RATE_LIMIT_FAIL_OPEN: ${RATE_LIMIT_FAIL_OPEN:-true}
+      RATE_LIMIT_WINDOW: ${RATE_LIMIT_WINDOW:-PT1M}
+      RATE_LIMIT_AUTH_REQUESTS: ${RATE_LIMIT_AUTH_REQUESTS:-10}
+      RATE_LIMIT_REDIRECT_REQUESTS: ${RATE_LIMIT_REDIRECT_REQUESTS:-60}
+      RATE_LIMIT_API_REQUESTS: ${RATE_LIMIT_API_REQUESTS:-120}
     expose:
       - "8080"
       - "8081"
@@ -205,6 +209,25 @@ services:
       timeout: 3s
       retries: 10
     restart: unless-stopped
+
+  k6:
+    image: grafana/k6:2.1.0
+    profiles:
+      - load-test
+    environment:
+      BASE_URL: http://nginx
+      SHORT_CODE: ${LOAD_TEST_SHORT_CODE:-}
+      RATE: ${LOAD_TEST_RATE:-1}
+      DURATION: ${LOAD_TEST_DURATION:-30s}
+      PRE_ALLOCATED_VUS: ${LOAD_TEST_PRE_ALLOCATED_VUS:-5}
+      MAX_VUS: ${LOAD_TEST_MAX_VUS:-20}
+      P95_MS: ${LOAD_TEST_P95_MS:-250}
+    volumes:
+      - ./load-testing:/scripts:ro
+    command: run /scripts/redirect.js
+    depends_on:
+      nginx:
+        condition: service_healthy
 
 volumes:
   postgres_data:

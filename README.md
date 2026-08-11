@@ -99,6 +99,10 @@ Stop the stack with `docker compose down`. This preserves named volumes; adding 
 
 PowerShell scripts for creating and restoring PostgreSQL custom-format backups are documented in [`ops/README.md`](ops/README.md). Backup output is excluded from Git. Restoration is destructive and requires an explicit `-Force` switch.
 
+## Load testing
+
+The redirect path has a Dockerized k6 performance test. It verifies redirect status, destination and request tracing without following the destination URL. See [`load-testing/README.md`](load-testing/README.md) for safe defaults, thresholds and higher-rate test instructions.
+
 ## API documentation
 
 Interactive OpenAPI documentation is available at `http://localhost:8080/swagger-ui.html` when the application is running. Public authentication and redirect operations can be called directly. For protected operations, sign in through `/api/v1/auth/login`, copy the returned access token, select **Authorize**, and enter the token as the bearer credential.
