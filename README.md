@@ -95,6 +95,10 @@ The production-like Compose stack builds the Spring Boot and React images, serve
 
 Stop the stack with `docker compose down`. This preserves named volumes; adding `--volumes` also deletes the local database and broker data.
 
+## Database recovery
+
+PowerShell scripts for creating and restoring PostgreSQL custom-format backups are documented in [`ops/README.md`](ops/README.md). Backup output is excluded from Git. Restoration is destructive and requires an explicit `-Force` switch.
+
 ## API documentation
 
 Interactive OpenAPI documentation is available at `http://localhost:8080/swagger-ui.html` when the application is running. Public authentication and redirect operations can be called directly. For protected operations, sign in through `/api/v1/auth/login`, copy the returned access token, select **Authorize**, and enter the token as the bearer credential.

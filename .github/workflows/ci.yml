@@ -37,6 +37,25 @@ jobs:
           chmod +x mvnw
           ./mvnw --batch-mode --no-transfer-progress verify
 
+      - name: Validate operations scripts
+        shell: pwsh
+        run: |
+          $scriptErrors = @()
+          Get-ChildItem ops -Filter '*.ps1' | ForEach-Object {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile(
+              $_.FullName,
+              [ref]$tokens,
+              [ref]$errors
+            ) | Out-Null
+            $scriptErrors += $errors
+          }
+          if ($scriptErrors.Count -gt 0) {
+            $scriptErrors | ForEach-Object { Write-Error $_ }
+            throw 'PowerShell operations script validation failed.'
+          }
+
   frontend:
     name: Frontend checks
     runs-on: ubuntu-latest
