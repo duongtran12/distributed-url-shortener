@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.duong.url_shortener.user.User;
 import com.duong.url_shortener.user.UserRepository;
@@ -14,9 +16,14 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.mockito.ArgumentCaptor;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
@@ -40,8 +47,18 @@ class RegistrationIntegrationTest {
 	@Autowired
 	private PasswordEncoder passwordEncoder;
 
+	@Autowired
+	private EmailVerificationTokenRepository tokenRepository;
+
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
+
+	@MockitoBean
+	private JavaMailSender mailSender;
+
 	@BeforeEach
 	void cleanDatabase() {
+		tokenRepository.deleteAll();
 		userRepository.deleteAll();
 	}
 
@@ -68,6 +85,38 @@ class RegistrationIntegrationTest {
 		User saved = userRepository.findByEmail("student@example.com").orElseThrow();
 		assertThat(saved.getPasswordHash()).isNotEqualTo("strong-password");
 		assertThat(passwordEncoder.matches("strong-password", saved.getPasswordHash())).isTrue();
+		assertThat(saved.isEnabled()).isFalse();
+		assertThat(tokenRepository.count()).isEqualTo(1);
+
+		mockMvc.perform(post("/api/v1/auth/login")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{"email":"student@example.com","password":"strong-password"}
+						"""))
+				.andExpect(status().isUnauthorized());
+
+		ArgumentCaptor<SimpleMailMessage> messageCaptor = ArgumentCaptor.forClass(SimpleMailMessage.class);
+		verify(mailSender).send(messageCaptor.capture());
+		String token = extractToken(messageCaptor.getValue().getText());
+		String storedHash = jdbcTemplate.queryForObject(
+				"SELECT token_hash FROM email_verification_tokens", String.class);
+		assertThat(storedHash).hasSize(64).isNotEqualTo(token);
+
+		mockMvc.perform(post("/api/v1/auth/email-verification/confirm")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{"token":"%s"}
+						""".formatted(token)))
+				.andExpect(status().isNoContent());
+
+		assertThat(userRepository.findByEmail("student@example.com").orElseThrow().isEnabled()).isTrue();
+		assertThat(tokenRepository.count()).isZero();
+		mockMvc.perform(post("/api/v1/auth/login")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{"email":"student@example.com","password":"strong-password"}
+						"""))
+				.andExpect(status().isOk());
 	}
 
 	@Test
@@ -103,5 +152,26 @@ class RegistrationIntegrationTest {
 				.andExpect(jsonPath("$.fieldErrors[?(@.field == 'email')]").exists())
 				.andExpect(jsonPath("$.fieldErrors[?(@.field == 'password')]").exists())
 				.andExpect(jsonPath("$.fieldErrors[?(@.field == 'displayName')]").exists());
+	}
+
+	@Test
+	void shouldNotRevealWhetherVerificationEmailExists() throws Exception {
+		mockMvc.perform(post("/api/v1/auth/email-verification/request")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+						{"email":"missing@example.com"}
+						"""))
+				.andExpect(status().isAccepted());
+
+		verifyNoInteractions(mailSender);
+		assertThat(tokenRepository.count()).isZero();
+	}
+
+	private String extractToken(String body) {
+		assertThat(body).isNotNull();
+		String marker = "?verificationToken=";
+		int start = body.indexOf(marker);
+		assertThat(start).isGreaterThanOrEqualTo(0);
+		return body.substring(start + marker.length()).split("\\s", 2)[0];
 	}
 }

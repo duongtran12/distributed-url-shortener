@@ -73,6 +73,12 @@ public class User {
 		return new User(email, passwordHash, displayName, Role.USER);
 	}
 
+	public static User createPendingVerification(String email, String passwordHash, String displayName) {
+		User user = new User(email, passwordHash, displayName, Role.USER);
+		user.enabled = false;
+		return user;
+	}
+
 	public void changePassword(String passwordHash) {
 		this.passwordHash = passwordHash;
 	}

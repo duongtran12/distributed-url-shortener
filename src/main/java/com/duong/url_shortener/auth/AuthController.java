@@ -20,14 +20,17 @@ public class AuthController {
 	private final AuthService authService;
 	private final RefreshTokenProperties refreshTokenProperties;
 	private final PasswordResetService passwordResetService;
+	private final EmailVerificationService emailVerificationService;
 
 	public AuthController(
 			AuthService authService,
 			RefreshTokenProperties refreshTokenProperties,
-			PasswordResetService passwordResetService) {
+			PasswordResetService passwordResetService,
+			EmailVerificationService emailVerificationService) {
 		this.authService = authService;
 		this.refreshTokenProperties = refreshTokenProperties;
 		this.passwordResetService = passwordResetService;
+		this.emailVerificationService = emailVerificationService;
 	}
 
 	@PostMapping("/register")
@@ -69,6 +72,18 @@ public class AuthController {
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	public void confirmPasswordReset(@Valid @RequestBody PasswordResetConfirmRequest request) {
 		passwordResetService.resetPassword(request);
+	}
+
+	@PostMapping("/email-verification/request")
+	@ResponseStatus(HttpStatus.ACCEPTED)
+	public void requestEmailVerification(@Valid @RequestBody EmailVerificationRequest request) {
+		emailVerificationService.requestVerification(request);
+	}
+
+	@PostMapping("/email-verification/confirm")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	public void confirmEmailVerification(@Valid @RequestBody EmailVerificationConfirmRequest request) {
+		emailVerificationService.confirm(request);
 	}
 
 	private ResponseEntity<LoginResponse> sessionResponse(AuthSession session) {

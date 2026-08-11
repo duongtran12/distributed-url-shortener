@@ -20,16 +20,19 @@ public class AuthService {
 	private final PasswordEncoder passwordEncoder;
 	private final AuthenticationManager authenticationManager;
 	private final RefreshTokenService refreshTokenService;
+	private final EmailVerificationService emailVerificationService;
 
 	public AuthService(
 			UserRepository userRepository,
 			PasswordEncoder passwordEncoder,
 			AuthenticationManager authenticationManager,
-			RefreshTokenService refreshTokenService) {
+			RefreshTokenService refreshTokenService,
+			EmailVerificationService emailVerificationService) {
 		this.userRepository = userRepository;
 		this.passwordEncoder = passwordEncoder;
 		this.authenticationManager = authenticationManager;
 		this.refreshTokenService = refreshTokenService;
+		this.emailVerificationService = emailVerificationService;
 	}
 
 	@Transactional
@@ -67,13 +70,15 @@ public class AuthService {
 			throw emailAlreadyExists();
 		}
 
-		User user = User.create(
+		User user = User.createPendingVerification(
 				normalizedEmail,
 				passwordEncoder.encode(request.password()),
 				request.displayName());
 
 		try {
-			return RegisterResponse.from(userRepository.saveAndFlush(user));
+			User saved = userRepository.saveAndFlush(user);
+			emailVerificationService.sendVerification(saved);
+			return RegisterResponse.from(saved);
 		} catch (DataIntegrityViolationException exception) {
 			throw emailAlreadyExists();
 		}
