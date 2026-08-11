@@ -30,6 +30,10 @@ app:
     enabled: false
     retention: P7D
     batch-size: 500
+  email-verification:
+    expiration: PT24H
+    frontend-url: http://localhost:5173/
+    from-address: no-reply@shortwave.test
   redirect-cache:
     enabled: false
     ttl: PT1H

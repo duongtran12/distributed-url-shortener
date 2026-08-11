@@ -5,7 +5,7 @@ import type { UserProfile } from './auth/types'
 import { DashboardHome } from './dashboard/DashboardHome'
 import { HealthBadge, type HealthState } from './components/HealthBadge'
 
-type AuthView = 'login' | 'register' | 'reset' | null
+type AuthView = 'login' | 'register' | 'reset' | 'verify' | null
 
 const platformFeatures = [
   { index: '01', title: 'Reliable redirects', detail: 'Redis caching keeps frequently used routes responsive while PostgreSQL remains the source of truth.' },
@@ -19,9 +19,11 @@ function ArrowIcon() {
 
 function App() {
 	const initialResetToken = new URLSearchParams(window.location.search).get('resetToken') || ''
+  const initialVerificationToken = new URLSearchParams(window.location.search).get('verificationToken') || ''
   const [health, setHealth] = useState<HealthState>('checking')
-  const [authView, setAuthView] = useState<AuthView>(initialResetToken ? 'reset' : null)
+  const [authView, setAuthView] = useState<AuthView>(initialVerificationToken ? 'verify' : initialResetToken ? 'reset' : null)
 	const [resetToken, setResetToken] = useState(initialResetToken)
+  const [verificationToken, setVerificationToken] = useState(initialVerificationToken)
   const [authNotice, setAuthNotice] = useState('')
   const [user, setUser] = useState<UserProfile | null>(null)
   const [sessionLoading, setSessionLoading] = useState(true)
@@ -105,6 +107,19 @@ function App() {
 		setAuthView('login')
 	}
 
+  function clearVerificationToken() {
+    setVerificationToken('')
+    const url = new URL(window.location.href)
+    url.searchParams.delete('verificationToken')
+    window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`)
+  }
+
+  function handleEmailVerified() {
+    clearVerificationToken()
+    setAuthNotice('Email verified successfully. You can now sign in.')
+    setAuthView('login')
+  }
+
   function openAuth(view: Exclude<AuthView, null>) {
     setAuthNotice('')
     setAuthView(view)
@@ -112,6 +127,7 @@ function App() {
 
   function closeAuth() {
 		if (resetToken) clearResetToken()
+    if (verificationToken) clearVerificationToken()
     setAuthNotice('')
     setAuthView(null)
   }
@@ -201,6 +217,9 @@ function App() {
 					resetToken={resetToken}
 					onPasswordReset={handlePasswordReset}
 					onResetTokenDismissed={clearResetToken}
+          verificationToken={verificationToken}
+          onEmailVerified={handleEmailVerified}
+          onVerificationTokenDismissed={clearVerificationToken}
         />
       )}
     </main>

@@ -129,12 +129,25 @@ export async function login(email: string, password: string): Promise<UserProfil
   }
 }
 
-export async function register(displayName: string, email: string, password: string): Promise<UserProfile> {
+export async function register(displayName: string, email: string, password: string): Promise<void> {
   await apiRequest<UserProfile>('/api/v1/auth/register', {
     method: 'POST',
     body: JSON.stringify({ displayName, email, password }),
   })
-  return login(email, password)
+}
+
+export function requestEmailVerification(email: string): Promise<void> {
+  return apiRequest<void>('/api/v1/auth/email-verification/request', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  })
+}
+
+export function confirmEmailVerification(token: string): Promise<void> {
+  return apiRequest<void>('/api/v1/auth/email-verification/confirm', {
+    method: 'POST',
+    body: JSON.stringify({ token }),
+  })
 }
 
 export function getCurrentUser(): Promise<UserProfile> {
