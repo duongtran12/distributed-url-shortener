@@ -106,6 +106,9 @@ jobs:
           GRAFANA_ADMIN_PASSWORD: ci-grafana-password
         run: docker compose config --quiet
 
+      - name: Validate k6 load test
+        run: docker run --rm -v "${{ github.workspace }}/load-testing:/scripts:ro" grafana/k6:2.1.0 inspect /scripts/redirect.js
+
       - name: Build backend image
         run: docker build --tag url-shortener-backend:ci .
 
