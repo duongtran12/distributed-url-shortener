@@ -1,0 +1,94 @@
+services:
+  postgres:
+    ports: !reset []
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  redis:
+    ports: !reset []
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+
+  rabbitmq:
+    ports: !reset []
+    deploy:
+      resources:
+        limits:
+          memory: 768M
+
+  mailpit:
+    profiles:
+      - development
+    ports: !reset []
+
+  backend:
+    image: ${BACKEND_IMAGE:?BACKEND_IMAGE is required}
+    build: !reset null
+    pull_policy: always
+    read_only: true
+    tmpfs:
+      - /tmp:size=128m,mode=1777
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      REFRESH_TOKEN_SECURE_COOKIE: "true"
+      MAIL_HOST: ${MAIL_HOST:?MAIL_HOST is required}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME:?MAIL_USERNAME is required}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:?MAIL_PASSWORD is required}
+      MAIL_SMTP_AUTH: ${MAIL_SMTP_AUTH:-true}
+      MAIL_STARTTLS_ENABLED: ${MAIL_STARTTLS_ENABLED:-true}
+      MAIL_STARTTLS_REQUIRED: ${MAIL_STARTTLS_REQUIRED:-true}
+      PASSWORD_RESET_FRONTEND_URL: ${PUBLIC_BASE_URL:?PUBLIC_BASE_URL is required}
+      PASSWORD_RESET_FROM_ADDRESS: ${MAIL_FROM_ADDRESS:?MAIL_FROM_ADDRESS is required}
+      EMAIL_VERIFICATION_FRONTEND_URL: ${PUBLIC_BASE_URL:?PUBLIC_BASE_URL is required}
+      EMAIL_VERIFICATION_FROM_ADDRESS: ${MAIL_FROM_ADDRESS:?MAIL_FROM_ADDRESS is required}
+      APP_BASE_URL: ${PUBLIC_BASE_URL:?PUBLIC_BASE_URL is required}
+      RATE_LIMIT_FAIL_OPEN: "false"
+    depends_on: !override
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    deploy:
+      replicas: ${BACKEND_REPLICAS:-2}
+      resources:
+        limits:
+          memory: ${BACKEND_MEMORY_LIMIT:-768M}
+
+  prometheus:
+    ports: !override
+      - "127.0.0.1:${PROMETHEUS_PORT:-9090}:9090"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  grafana:
+    ports: !override
+      - "127.0.0.1:${GRAFANA_PORT:-3000}:3000"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  nginx:
+    image: ${FRONTEND_IMAGE:?FRONTEND_IMAGE is required}
+    build: !reset null
+    pull_policy: always
+    ports: !override
+      - "${BIND_ADDRESS:-0.0.0.0}:${APP_PORT:-80}:80"
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx:size=64m
+      - /var/run:size=16m
+      - /tmp:size=16m
+    deploy:
+      resources:
+        limits:
+          memory: 128M

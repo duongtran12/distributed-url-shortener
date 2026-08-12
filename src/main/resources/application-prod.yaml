@@ -1,0 +1,23 @@
+spring:
+  jpa:
+    show-sql: false
+
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+
+server:
+  shutdown: graceful
+
+springdoc:
+  swagger-ui:
+    enabled: false
+
+management:
+  endpoint:
+    health:
+      show-details: never
+
+logging:
+  level:
+    root: INFO
+    org.hibernate.SQL: WARN
