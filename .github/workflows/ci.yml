@@ -117,6 +117,19 @@ jobs:
       - name: Validate Docker Compose
         run: docker compose config --quiet
 
+      - name: Validate production Docker Compose
+        shell: pwsh
+        run: |
+          $production = docker compose --env-file .env.production.example -f docker-compose.yml -f docker-compose.production.yml config --format json | ConvertFrom-Json
+          if ($production.services.postgres.ports) { throw 'PostgreSQL must not publish production ports.' }
+          if ($production.services.redis.ports) { throw 'Redis must not publish production ports.' }
+          if ($production.services.rabbitmq.ports) { throw 'RabbitMQ must not publish production ports.' }
+          if ($production.services.mailpit) { throw 'Mailpit must not run in production.' }
+          if ($production.services.backend.build) { throw 'Production backend must use a registry image.' }
+          if ($production.services.nginx.build) { throw 'Production frontend must use a registry image.' }
+          if ($production.services.prometheus.ports[0].host_ip -ne '127.0.0.1') { throw 'Prometheus must bind to loopback.' }
+          if ($production.services.grafana.ports[0].host_ip -ne '127.0.0.1') { throw 'Grafana must bind to loopback.' }
+
       - name: Validate k6 load test
         run: docker run --rm -v "${{ github.workspace }}/load-testing:/scripts:ro" grafana/k6:2.1.0 inspect /scripts/redirect.js
 

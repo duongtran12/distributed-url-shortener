@@ -95,6 +95,10 @@ The production-like Compose stack builds the Spring Boot and React images, serve
 
 Stop the stack with `docker compose down`. This preserves named volumes; adding `--volumes` also deletes the local database and broker data.
 
+## Production deployment
+
+The production Compose override uses prebuilt registry images, exposes only the application gateway publicly, binds Grafana and Prometheus to loopback, disables Mailpit and enables secure authentication cookies. Deployment prerequisites, secret generation, SMTP configuration, validation and rollback commands are documented in [`ops/PRODUCTION.md`](ops/PRODUCTION.md).
+
 ## Database recovery
 
 PowerShell scripts for creating and restoring PostgreSQL custom-format backups are documented in [`ops/README.md`](ops/README.md). Backup output is excluded from Git. Restoration is destructive and requires an explicit `-Force` switch.
