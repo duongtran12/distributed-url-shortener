@@ -99,6 +99,8 @@ Stop the stack with `docker compose down`. This preserves named volumes; adding 
 
 The production Compose override uses prebuilt registry images, exposes only the application gateway publicly, binds Grafana and Prometheus to loopback, disables Mailpit and enables secure authentication cookies. Deployment prerequisites, secret generation, SMTP configuration, validation and rollback commands are documented in [`ops/PRODUCTION.md`](ops/PRODUCTION.md).
 
+Version tags matching `vMAJOR.MINOR.PATCH` automatically publish multi-platform backend and frontend images to GitHub Container Registry. Published images include semantic-version and commit-SHA tags plus signed build provenance attestations.
+
 ## Database recovery
 
 PowerShell scripts for creating and restoring PostgreSQL custom-format backups are documented in [`ops/README.md`](ops/README.md). Backup output is excluded from Git. Restoration is destructive and requires an explicit `-Force` switch.

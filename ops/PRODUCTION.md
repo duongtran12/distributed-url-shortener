@@ -33,6 +33,26 @@ $secretBytes = New-Object byte[] 48
 
 Set `BACKEND_IMAGE` and `FRONTEND_IMAGE` to immutable version tags or image digests. Set `PUBLIC_BASE_URL` to the final HTTPS URL including the trailing slash. Configure real PostgreSQL, RabbitMQ, Grafana and SMTP credentials. Never commit `.env.production`.
 
+## Publish application images
+
+Pushing a semantic version tag builds Linux AMD64 and ARM64 images and publishes them to GitHub Container Registry:
+
+```powershell
+git switch main
+git pull --ff-only origin main
+git tag -a v1.0.0 -m "Release v1.0.0"
+git push origin v1.0.0
+```
+
+The workflow publishes these packages:
+
+- `ghcr.io/duongtran12/distributed-url-shortener-backend`
+- `ghcr.io/duongtran12/distributed-url-shortener-frontend`
+
+A `v1.2.3` release produces `1.2.3`, `1.2`, `1`, `latest` and commit-SHA tags. The workflow can also be launched manually from **Actions > Publish container images** for a SHA-tagged test build. Package visibility is managed separately in the repository's **Packages** settings.
+
+Use a full image digest for the strongest deployment reproducibility, or use the exact `1.2.3` tag for simpler operations. Do not deploy from `latest` when rollback predictability matters.
+
 ## Validate and deploy
 
 Use both Compose files for every production operation:
