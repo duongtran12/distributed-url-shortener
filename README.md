@@ -8,6 +8,10 @@ A portfolio project built incrementally with Java 21, Spring Boot, PostgreSQL, R
 
 The application includes authentication, URL management, Redis caching and distributed rate limiting, RabbitMQ click tracking, analytics APIs, and a React analytics dashboard.
 
+## Architecture
+
+The system context, container topology, redirect and analytics sequences, data ownership, consistency model, security boundaries, scaling characteristics and current limitations are documented in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+
 ## Prerequisites
 
 - Java 21
