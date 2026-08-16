@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.duong</groupId>
 	<artifactId>url-shortener</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>1.0.0</version>
 	<name>url-shortener</name>
 	<description>Distributed URL Shortener and Analytics Platform</description>
 	<url/>

@@ -49,7 +49,9 @@ The workflow publishes these packages:
 - `ghcr.io/duongtran12/distributed-url-shortener-backend`
 - `ghcr.io/duongtran12/distributed-url-shortener-frontend`
 
-A `v1.2.3` release produces `1.2.3`, `1.2`, `1`, `latest` and commit-SHA tags. The workflow can also be launched manually from **Actions > Publish container images** for a SHA-tagged test build. Package visibility is managed separately in the repository's **Packages** settings.
+A `v1.2.3` release produces `1.2.3`, `1.2`, `1`, `latest` and commit-SHA tags. After both images and their provenance attestations are published successfully, the workflow creates a GitHub Release with generated notes. The workflow can also be launched manually from **Actions > Publish container images** for a SHA-tagged test build; manual runs do not create a GitHub Release. Package visibility is managed separately in the repository's **Packages** settings.
+
+The complete validation, tagging and rollback checklist is documented in [`RELEASE.md`](RELEASE.md).
 
 Use a full image digest for the strongest deployment reproducibility, or use the exact `1.2.3` tag for simpler operations. Do not deploy from `latest` when rollback predictability matters.
 
