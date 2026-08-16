@@ -103,7 +103,7 @@ Stop the stack with `docker compose down`. This preserves named volumes; adding 
 
 The production Compose override uses prebuilt registry images, exposes only the application gateway publicly, binds Grafana and Prometheus to loopback, disables Mailpit and enables secure authentication cookies. Deployment prerequisites, secret generation, SMTP configuration, validation and rollback commands are documented in [`ops/PRODUCTION.md`](ops/PRODUCTION.md).
 
-Version tags matching `vMAJOR.MINOR.PATCH` automatically publish multi-platform backend and frontend images to GitHub Container Registry. Published images include semantic-version and commit-SHA tags plus signed build provenance attestations.
+Version tags matching `vMAJOR.MINOR.PATCH` automatically publish multi-platform backend and frontend images to GitHub Container Registry and create a GitHub Release with generated notes. Published images include semantic-version and commit-SHA tags plus signed build provenance attestations. See the [release runbook](ops/RELEASE.md) and [changelog](CHANGELOG.md) before publishing a version.
 
 ## Database recovery
 
