@@ -1,4 +1,4 @@
-FROM eclipse-temurin:21-jdk-alpine AS builder
+FROM eclipse-temurin:24-jdk-alpine AS builder
 
 WORKDIR /workspace
 COPY .mvn .mvn
@@ -8,7 +8,7 @@ RUN chmod +x mvnw && ./mvnw -B dependency:go-offline
 COPY src src
 RUN ./mvnw -B -DskipTests package
 
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:24-jre-alpine
 
 RUN addgroup -S app && adduser -S app -G app
 WORKDIR /app
